@@ -21,7 +21,7 @@ userName.grid(column = 1, row = 0)
 
 passLbl = Label(window, text = "Password")
 passLbl.grid(column = 0, row = 1)
-password = Entry(window, width = 30)
+password = Entry(window, show = "*", width = 30)
 password.grid(column = 1, row = 1)
 
 def clicked():
@@ -29,13 +29,10 @@ def clicked():
     browser["Password"] = password.get()
     response = browser.submit_selected()
     browser.launch_browser()
-    #print(response.text)
+
 submitButton = Button(window, text="Submit", width = 25, height=5, bg="red", fg="black", command = clicked)
 
 submitButton.grid(column=0, row=2)
 window.mainloop()
-#browser["UserName"] = userName
-#browser["Password"] = password
-#response = browser.submit_selected()
-#print(response.text)
+
 
