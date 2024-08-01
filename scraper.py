@@ -3,11 +3,11 @@ import re
 import mechanicalsoup
 from tkinter import *
 
-login_url="https://radius.mathnasium.com/Student"
+loginUrl="https://radius.mathnasium.com/Student"
 browser = mechanicalsoup.StatefulBrowser()
-login_page = browser.open(login_url)
-login_html = login_page.soup
-print(login_html)
+loginPage = browser.open(loginUrl)
+loginHtml = loginPage.soup
+print(loginHtml)
 browser.select_form()
 #browser.form.print_summary()
 window = Tk()
