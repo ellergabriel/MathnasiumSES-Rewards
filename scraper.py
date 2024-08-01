@@ -24,13 +24,14 @@ passLbl.grid(column = 0, row = 1)
 password = Entry(window, show = "*", width = 30)
 password.grid(column = 1, row = 1)
 
-def clicked():
+def loginSub():
     browser["UserName"] = userName.get()
     browser["Password"] = password.get()
-    response = browser.submit_selected()
-    browser.launch_browser()
+    #response = browser.submit_selected()
+    #browser.launch_browser()
+    window.geometry('1200x800')
 
-submitButton = Button(window, text="Submit", width = 25, height=5, bg="red", fg="black", command = clicked)
+submitButton = Button(window, text="Submit", width = 25, height=5, bg="red", fg="black", command = loginSub)
 
 submitButton.grid(column=0, row=2)
 window.mainloop()
