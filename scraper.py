@@ -30,6 +30,13 @@ def loginSub():
     #response = browser.submit_selected()
     #browser.launch_browser()
     window.geometry('1200x800')
+    submitButton.destroy()
+    passLbl.destroy()
+    uNameLbl.destroy()
+    userName.destroy()
+    password.destroy()
+    
+    
 
 submitButton = Button(window, text="Submit", width = 25, height=5, bg="red", fg="black", command = loginSub)
 
