@@ -3,7 +3,7 @@ import re
 import mechanicalsoup
 from tkinter import *
 
-loginUrl="https://radius.mathnasium.com/Student"
+loginUrl= "https://radius.mathnasium.com/Student"
 browser = mechanicalsoup.StatefulBrowser()
 loginPage = browser.open(loginUrl)
 loginHtml = loginPage.soup
@@ -28,7 +28,8 @@ def loginSub():
     browser["UserName"] = userName.get()
     browser["Password"] = password.get()
     response = browser.submit_selected()
-    if(response.status_code == 200):
+    regUrl = str(browser.url)
+    if (regUrl.find("Login") == -1):
         window.geometry('1200x800')
         submitButton.destroy()
         passLbl.destroy()
