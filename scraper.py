@@ -27,14 +27,15 @@ password.grid(column = 1, row = 1)
 def loginSub():
     browser["UserName"] = userName.get()
     browser["Password"] = password.get()
-    #response = browser.submit_selected()
+    response = browser.submit_selected()
+    if(response.status_code == 200):
+        window.geometry('1200x800')
+        submitButton.destroy()
+        passLbl.destroy()
+        uNameLbl.destroy()
+        userName.destroy()
+        password.destroy()
     #browser.launch_browser()
-    window.geometry('1200x800')
-    submitButton.destroy()
-    passLbl.destroy()
-    uNameLbl.destroy()
-    userName.destroy()
-    password.destroy()
     
     
 
