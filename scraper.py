@@ -33,7 +33,7 @@ password = Entry(window, show = "*", width = 30)
 password.grid(column = 1, row = 1)
 
 def parseStudents():
-    print("shazbot")
+    print("Login successful")
 
 def loginSub():
     """browser["UserName"] = userName.get()
@@ -45,10 +45,8 @@ def loginSub():
     driver.get(loginUrl)
     driver.find_element(By.ID, "UserName").send_keys(uName)
     driver.find_element(By.ID, "Password").send_keys(pWord)
-    #radUName.send_keys(uName)
-    #radPass.send_keys(pWord)
     driver.find_element(By.ID, "login").click()
-    if (True): #(regUrl.find("Login") == -1)
+    if not("Login" in driver.current_url): #(regUrl.find("Login") == -1)
         window.geometry('1200x800')
         submitButton.destroy()
         passLbl.destroy()
