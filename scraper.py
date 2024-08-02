@@ -2,9 +2,13 @@ from urllib.request import urlopen
 import mechanicalsoup
 from tkinter import *
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 
 loginUrl= "https://radius.mathnasium.com/Student"
-driver = webdriver.Chrome('/')
+DRIVER_PATH = './chromedriver.exe'
+service = Service(executable_path=DRIVER_PATH)
+options = webdriver.ChromeOptions()
+driver = webdriver.Chrome(service=service, options=options)
 
 """browser = mechanicalsoup.StatefulBrowser()
 loginPage = browser.open(loginUrl)
