@@ -1,14 +1,16 @@
 from urllib.request import urlopen
 import mechanicalsoup
 from tkinter import *
+from selenium import webdriver
 
 loginUrl= "https://radius.mathnasium.com/Student"
-browser = mechanicalsoup.StatefulBrowser()
+driver = webdriver.Chrome('/')
+
+"""browser = mechanicalsoup.StatefulBrowser()
 loginPage = browser.open(loginUrl)
 loginHtml = loginPage.soup
-print(loginHtml)
 browser.select_form()
-#browser.form.print_summary()
+#browser.form.print_summary()"""
 
 window = Tk()
 window.title("Digital Rewards Tracker")
@@ -25,15 +27,13 @@ password = Entry(window, show = "*", width = 30)
 password.grid(column = 1, row = 1)
 
 def parseStudents():
-    browser.select_form()
-    #browser["83e3ad36-09f3-4ce5-8bc4-5d1908279f34"] = "Enrolled"
-    browser.launch_browser()
+    print("shazbot")
 
 def loginSub():
-    browser["UserName"] = userName.get()
+    """browser["UserName"] = userName.get()
     browser["Password"] = password.get()
     response = browser.submit_selected()
-    regUrl = str(browser.url)
+    regUrl = str(browser.url)"""
     if (regUrl.find("Login") == -1):
         window.geometry('1200x800')
         submitButton.destroy()
@@ -41,11 +41,12 @@ def loginSub():
         uNameLbl.destroy()
         userName.destroy()
         password.destroy()
+        browser.refresh()
         parseStudents()
     else:
         errorLbl = Label(window, text = "ERROR: Unable to login")
         errorLbl.grid(column = 1, row = 2)
-    browser.launch_browser()
+    #browser.launch_browser()
     
     
 
