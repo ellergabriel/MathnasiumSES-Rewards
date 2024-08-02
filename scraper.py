@@ -3,11 +3,13 @@ import mechanicalsoup
 from tkinter import *
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By 
 
 loginUrl= "https://radius.mathnasium.com/Student"
 DRIVER_PATH = './chromedriver.exe'
 service = Service(executable_path=DRIVER_PATH)
 options = webdriver.ChromeOptions()
+#options.add_argument("--headless=new")
 driver = webdriver.Chrome(service=service, options=options)
 
 """browser = mechanicalsoup.StatefulBrowser()
@@ -38,14 +40,20 @@ def loginSub():
     browser["Password"] = password.get()
     response = browser.submit_selected()
     regUrl = str(browser.url)"""
-    if (regUrl.find("Login") == -1):
+    uName = userName.get()
+    pWord = password.get() 
+    driver.get(loginUrl)
+    radUName = driver.find_element(By.ID, "UserName")
+    radPass = driver.find_element(By.ID, "Password")
+    radUName.send_keys(uName)
+    radPass.send_keys(pWord)
+    if (True): #(regUrl.find("Login") == -1)
         window.geometry('1200x800')
         submitButton.destroy()
         passLbl.destroy()
         uNameLbl.destroy()
         userName.destroy()
         password.destroy()
-        browser.refresh()
         parseStudents()
     else:
         errorLbl = Label(window, text = "ERROR: Unable to login")
@@ -58,5 +66,6 @@ submitButton = Button(window, text="Submit", width = 10, height=3, bg="red", fg=
 
 submitButton.grid(column=0, row=2)
 window.mainloop()
+driver.quit()
 
 
