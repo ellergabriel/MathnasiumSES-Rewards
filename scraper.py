@@ -3,20 +3,17 @@ import mechanicalsoup
 from tkinter import *
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By 
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import Select
 
 loginUrl= "https://radius.mathnasium.com/Student"
+ENROLL_ELEM_ID = "e85d411e-07a7-4273-99d6-38a371493c1e"
 DRIVER_PATH = './chromedriver.exe'
 service = Service(executable_path=DRIVER_PATH)
 options = webdriver.ChromeOptions()
 #options.add_argument("--headless=new")
 driver = webdriver.Chrome(service=service, options=options)
 
-"""browser = mechanicalsoup.StatefulBrowser()
-loginPage = browser.open(loginUrl)
-loginHtml = loginPage.soup
-browser.select_form()
-#browser.form.print_summary()"""
 
 window = Tk()
 window.title("Digital Rewards Tracker")
@@ -34,19 +31,19 @@ password.grid(column = 1, row = 1)
 
 def parseStudents():
     print("Login successful")
+    enrollFill = driver.find_element(By.XPATH,'//label[@for="Enrollment_Filter:_"]')
+    print(enrollFill)
+    #enrollList = driver.find_element(By.ID, ENROLL_ELEM_ID)
+    
 
 def loginSub():
-    """browser["UserName"] = userName.get()
-    browser["Password"] = password.get()
-    response = browser.submit_selected()
-    regUrl = str(browser.url)"""
     uName = userName.get()
     pWord = password.get() 
     driver.get(loginUrl)
     driver.find_element(By.ID, "UserName").send_keys(uName)
     driver.find_element(By.ID, "Password").send_keys(pWord)
     driver.find_element(By.ID, "login").click()
-    if not("Login" in driver.current_url): #(regUrl.find("Login") == -1)
+    if not("Login" in driver.current_url):
         window.geometry('1200x800')
         submitButton.destroy()
         passLbl.destroy()
