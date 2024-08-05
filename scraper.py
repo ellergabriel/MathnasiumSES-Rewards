@@ -31,7 +31,7 @@ password.grid(column = 1, row = 1)
 
 def parseStudents():
     print("Login successful")
-    enrollFilterPath = "//div[@class='container']//div[@id='single-Grid-Page']/div[2]"
+    enrollFilterPath = "//div[@class='container']//div[@id='single-Grid-Page']/div[2]/div[1]/div[1]/div[3]/div[1]/span[1]"
     enrollFill = driver.find_element(By.XPATH, enrollFilterPath)
     print(enrollFill.get_attribute('innerHTML'))
     #enrollList = driver.find_element(By.ID, ENROLL_ELEM_ID)
