@@ -43,22 +43,35 @@ passLbl.grid(column = 0, row = 1)
 password = Entry(window, show = "*", width = 30)
 password.grid(column = 1, row = 1)
 
+def splitStudentName(student):
+    index = student.rfind(" ")
+    fName = student[0 : index]
+    lName = student[index + 1:]
+    print("first: " + fName)
+    print("last: " + lName)
+
 def recordStudent(students):
     driver.implicitly_wait(0)
+    viewedStu={}
     for stu in students:
         driver.execute_script("window.open('%s', '_blank')" %stu.get_attribute('href'))
         driver.switch_to.window(driver.window_handles[-1])
-        print(driver.find_element(By.ID, 'cardsAvailableDetail').text)
+        if driver.title in viewedStu:
+            print("shazbot")
+        else:
+            viewedStu[driver.title] = True
+            splitStudentName(driver.title)
+            cards = (int)(driver.find_element(By.ID, 'cardsAvailableDetail').text)
+            print(driver.title + " " + str(cards))
         driver.close()
         driver.switch_to.window(driver.window_handles[0])
-        #action.key_down(Keys.CONTROL)
-        #action.click(student)
+        
 
 #Function handles capturing student information for database entry/updates
 def parseStudents():
     driver.implicitly_wait(5)
-    studentReg = "a[@href=/Student/Details/]"
-    studentList = driver.find_elements(By.XPATH, "//a[starts-with(@href, '/Student/Details')]")
+    studentReg = "//a[starts-with(@href, '/Student/Details')]"
+    studentList = driver.find_elements(By.XPATH, studentReg)
     recordStudent(studentList)
     #studentTable = driver.find_element(By.CLASS_NAME, 'k-master-row')
     #driver.find_element(By.XPATH, "//table/div[@id='gridStudent']")
