@@ -1,5 +1,6 @@
 from urllib.request import urlopen
 import mechanicalsoup
+import sqlite3
 from tkinter import *
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -18,6 +19,15 @@ options = webdriver.ChromeOptions()
 driver = webdriver.Chrome(service=service, options=options)
 action = ActionChains(driver)
 
+stu_db = sqlite3.connect("students.db")
+stu_cur = stu_db.cursor()
+stu_table = """CREATE TABLE IF NOT EXISTS Students(
+                fName CHAR(31),
+                lName CHAR(31),
+                cards INT
+            );"""
+stu_cur.execute(stu_table)
+print(stu_cur.fetchall())
 
 window = Tk()
 window.title("Digital Rewards Tracker")
@@ -33,19 +43,23 @@ passLbl.grid(column = 0, row = 1)
 password = Entry(window, show = "*", width = 30)
 password.grid(column = 1, row = 1)
 
-def recordStudent(student):
-    driver.execute_script("window.open('%s', '_blank')" %student)
-    #action.key_down(Keys.CONTROL)
-    #action.click(student)
+def recordStudent(students):
+    driver.implicitly_wait(0)
+    for stu in students:
+        driver.execute_script("window.open('%s', '_blank')" %stu.get_attribute('href'))
+        driver.switch_to.window(driver.window_handles[-1])
+        print(driver.find_element(By.ID, 'cardsAvailableDetail').text)
+        driver.close()
+        driver.switch_to.window(driver.window_handles[0])
+        #action.key_down(Keys.CONTROL)
+        #action.click(student)
 
 #Function handles capturing student information for database entry/updates
 def parseStudents():
-    driver.implicitly_wait(15)
+    driver.implicitly_wait(5)
     studentReg = "a[@href=/Student/Details/]"
     studentList = driver.find_elements(By.XPATH, "//a[starts-with(@href, '/Student/Details')]")
-    for i in range(5):
-        recordStudent(studentList[i].get_attribute('href'))
-        i += 1
+    recordStudent(studentList)
     #studentTable = driver.find_element(By.CLASS_NAME, 'k-master-row')
     #driver.find_element(By.XPATH, "//table/div[@id='gridStudent']")
     #print(studentTable.get_attribute('innerHTML'))
