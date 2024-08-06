@@ -6,6 +6,8 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 loginUrl= "https://radius.mathnasium.com/Student"
 ENROLL_ELEM_ID = "e85d411e-07a7-4273-99d6-38a371493c1e"
@@ -30,7 +32,19 @@ passLbl.grid(column = 0, row = 1)
 password = Entry(window, show = "*", width = 30)
 password.grid(column = 1, row = 1)
 
+#Function handles capturing student information for database entry/updates
 def parseStudents():
+    driver.implicitly_wait(15)
+    studentReg = "a[@href=/Student/Details/]"
+    studentList = driver.find_elements(By.XPATH, "//a[starts-with(@href, '/Student/Details')]")
+    for stu in studentList:
+        print(stu)
+    #studentTable = driver.find_element(By.CLASS_NAME, 'k-master-row')
+    #driver.find_element(By.XPATH, "//table/div[@id='gridStudent']")
+    #print(studentTable.get_attribute('innerHTML'))
+
+#Function interacts with Student Management page, TODO: update to dynamically select enrollment filter
+def generateStudents():
     print("Login successful")
     enrollFilterPath = "//div[@class='container']//div[@id='single-Grid-Page']/div[2]/div[1]/div[1]/div[3]/div[1]/span[1]"
     enFill = driver.find_element(By.XPATH, enrollFilterPath)
@@ -38,9 +52,10 @@ def parseStudents():
     for i in range(3) :
         enFill.send_keys(Keys.DOWN)
     enFill.send_keys(Keys.ENTER)
-    driver.find_element(By.ID, 'btnsearch').click() 
+    driver.find_element(By.ID, 'btnsearch').click()
+    parseStudents()
     
-
+#Function access 'Student Management' page, handles login on intial boot 
 def loginSub():
     uName = userName.get()
     pWord = password.get() 
@@ -49,13 +64,13 @@ def loginSub():
     driver.find_element(By.ID, "Password").send_keys(pWord)
     driver.find_element(By.ID, "login").click()
     if not("Login" in driver.current_url):
-        window.geometry('1200x800')
         submitButton.destroy()
         passLbl.destroy()
         uNameLbl.destroy()
         userName.destroy()
         password.destroy()
-        parseStudents()
+        generateStudents()
+        window.geometry('1200x800')
     else:
         errorLbl = Label(window, text = "ERROR: Unable to login")
         errorLbl.grid(column = 1, row = 2)
