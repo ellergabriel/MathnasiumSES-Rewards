@@ -8,14 +8,15 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
 
 loginUrl= "https://radius.mathnasium.com/Student"
-ENROLL_ELEM_ID = "e85d411e-07a7-4273-99d6-38a371493c1e"
 DRIVER_PATH = './chromedriver.exe'
 service = Service(executable_path=DRIVER_PATH)
 options = webdriver.ChromeOptions()
 #options.add_argument("--headless=new")
 driver = webdriver.Chrome(service=service, options=options)
+action = ActionChains(driver)
 
 
 window = Tk()
@@ -32,13 +33,19 @@ passLbl.grid(column = 0, row = 1)
 password = Entry(window, show = "*", width = 30)
 password.grid(column = 1, row = 1)
 
+def recordStudent(student):
+    driver.execute_script("window.open('%s', '_blank')" %student)
+    #action.key_down(Keys.CONTROL)
+    #action.click(student)
+
 #Function handles capturing student information for database entry/updates
 def parseStudents():
     driver.implicitly_wait(15)
     studentReg = "a[@href=/Student/Details/]"
     studentList = driver.find_elements(By.XPATH, "//a[starts-with(@href, '/Student/Details')]")
-    for stu in studentList:
-        print(stu)
+    for i in range(5):
+        recordStudent(studentList[i].get_attribute('href'))
+        i += 1
     #studentTable = driver.find_element(By.CLASS_NAME, 'k-master-row')
     #driver.find_element(By.XPATH, "//table/div[@id='gridStudent']")
     #print(studentTable.get_attribute('innerHTML'))
