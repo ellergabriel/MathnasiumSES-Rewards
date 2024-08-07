@@ -19,14 +19,12 @@ options = webdriver.ChromeOptions()
 driver = webdriver.Chrome(service=service, options=options)
 action = ActionChains(driver)
 
-stu_db = sqlite3.connect("students.db")
-stu_cur = stu_db.cursor()
-stu_table = "CREATE TABLE IF NOT EXISTS Students(fName CHAR(31),lName CHAR(31),cards INT, UNIQUE(fName, lName));"
-stu_cur.execute(stu_table)
-stu_cur.execute("SELECT * FROM Students")
-print(stu_cur.fetchall())
-viewedStu={}
-
+stuDB = sqlite3.connect("students.db")
+stuCur = stuDB.cursor()
+stuTable = "CREATE TABLE IF NOT EXISTS Students(fName CHAR(31),lName CHAR(31),cards INT, UNIQUE(fName, lName));"
+stuCur.execute(stuTable)
+stuCur.execute("SELECT * FROM Students")
+print(stuCur.fetchall())
 
 window = Tk()
 window.title("Digital Rewards Tracker")
@@ -49,6 +47,19 @@ def splitStudentName(student):
     lName = student[index + 1:]
     return [fName, lName]
 
+#Helper function that takes the generate studentLists and prunes based on previously seen href literals
+def pruneStudents(studentList):
+    viewedRefs = {}
+    lcv = 0
+    while(lcv < len(studentList)):
+        stuHref = studentList[lcv].get_attribute('href')
+        if stuHref not in viewedRefs:
+            viewedRefs[stuHref] = True
+            lcv += 1
+        else:
+            print("removing " + stuHref)
+            studentList.pop(lcv)
+
 #Function takes in list of Student profiles from Radius and opens each in a new tab, recording full name and card count
 def recordStudent(students):
     driver.implicitly_wait(0)
@@ -63,18 +74,22 @@ def recordStudent(students):
             [fHolder, lHolder] = splitStudentName(driver.title)
             cards = (int)(driver.find_element(By.ID, 'cardsAvailableDetail').text)
             print(driver.title + " " + str(cards))
-            stu_cur.execute("INSERT OR IGNORE INTO Students(fName, lName, cards) values(?,?,?)",(fHolder, lHolder, cards))
-            stu_cur.execute("UPDATE Students SET cards = ? WHERE fName = ? AND lName = ?", (cards, fHolder, lHolder))
-            stu_db.commit()
+            stuCur.execute("INSERT OR IGNORE INTO Students(fName, lName, cards) values(?,?,?)",(fHolder, lHolder, cards))
+            stuCur.execute("UPDATE Students SET cards = ? WHERE fName = ? AND lName = ?", (cards, fHolder, lHolder))
+            stuDB.commit()
         driver.close()
         driver.switch_to.window(driver.window_handles[0])
         
+
 
 #Function handles capturing student information for database entry/updates
 def parseStudents():
     driver.implicitly_wait(5)
     studentReg = "//a[starts-with(@href, '/Student/Details')]"
     studentList = driver.find_elements(By.XPATH, studentReg)
+    print("Pre-prune size: " + str(len(studentList)))
+    pruneStudents(studentList)
+    print("Post-prune size: " + str(len(studentList)))
     #recordStudent(studentList)
 
 #Function interacts with Student Management page, TODO: update to dynamically select enrollment filter
@@ -99,7 +114,9 @@ def loginSub():
     driver.find_element(By.ID, "login").click()
     if not("Login" in driver.current_url):
         generateStudents()
-        studentCount = len(viewedStu)
+        stuCur.execute("SELECT COUNT(*) FROM Students")
+        stuCount = stuCur.fetchone()[0]
+        print(stuCount)
         submitButton.destroy()
         passLbl.destroy()
         uNameLbl.destroy()
