@@ -2,6 +2,8 @@ from urllib.request import urlopen
 import mechanicalsoup
 import sqlite3
 from tkinter import *
+import datetime
+import multiprocessing
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -15,7 +17,8 @@ loginUrl= "https://radius.mathnasium.com/Student"
 DRIVER_PATH = './chromedriver.exe'
 service = Service(executable_path=DRIVER_PATH)
 options = webdriver.ChromeOptions()
-#options.add_argument("--headless=new")
+options.add_argument("--headless=new")
+options.add_argument("--blink-settings=imageEnabled=false")
 driver = webdriver.Chrome(service=service, options=options)
 action = ActionChains(driver)
 
@@ -47,7 +50,7 @@ def splitStudentName(student):
     lName = student[index + 1:]
     return [fName, lName]
 
-#Helper function that takes the generate studentLists and prunes based on previously seen href literals
+#Helper function that takes the generated studentList and prunes based on previously seen href literals
 def pruneStudents(studentList):
     viewedRefs = {}
     lcv = 0
@@ -57,28 +60,27 @@ def pruneStudents(studentList):
             viewedRefs[stuHref] = True
             lcv += 1
         else:
-            print("removing " + stuHref)
             studentList.pop(lcv)
 
 #Function takes in list of Student profiles from Radius and opens each in a new tab, recording full name and card count
 def recordStudent(students):
     driver.implicitly_wait(0)
     viewedStu={}
+    startTime = datetime.datetime.now()
     for stu in students:
         driver.execute_script("window.open('%s', '_blank')" % stu.get_attribute('href'))
         driver.switch_to.window(driver.window_handles[-1])
-        if driver.title in viewedStu:
-            print("shazbot")
-        else:
-            viewedStu[driver.title] = True
-            [fHolder, lHolder] = splitStudentName(driver.title)
-            cards = (int)(driver.find_element(By.ID, 'cardsAvailableDetail').text)
-            print(driver.title + " " + str(cards))
-            stuCur.execute("INSERT OR IGNORE INTO Students(fName, lName, cards) values(?,?,?)",(fHolder, lHolder, cards))
-            stuCur.execute("UPDATE Students SET cards = ? WHERE fName = ? AND lName = ?", (cards, fHolder, lHolder))
-            stuDB.commit()
+        [fHolder, lHolder] = splitStudentName(driver.title)
+        cards = (int)(driver.find_element(By.ID, 'cardsAvailableDetail').text)
+        print(driver.title + " " + str(cards))
+        stuCur.execute("INSERT OR IGNORE INTO Students(fName, lName, cards) values(?,?,?)",(fHolder, lHolder, cards))
+        stuCur.execute("UPDATE Students SET cards = ? WHERE fName = ? AND lName = ?", (cards, fHolder, lHolder))
+        stuDB.commit()
         driver.close()
         driver.switch_to.window(driver.window_handles[0])
+    print(startTime.time())
+    finishTime = datetime.datetime.now()
+    print(finishTime.time())
         
 
 
@@ -90,7 +92,7 @@ def parseStudents():
     print("Pre-prune size: " + str(len(studentList)))
     pruneStudents(studentList)
     print("Post-prune size: " + str(len(studentList)))
-    #recordStudent(studentList)
+    recordStudent(studentList)
 
 #Function interacts with Student Management page, TODO: update to dynamically select enrollment filter
 def generateStudents():
