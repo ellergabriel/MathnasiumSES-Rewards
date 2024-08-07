@@ -25,6 +25,8 @@ stu_table = "CREATE TABLE IF NOT EXISTS Students(fName CHAR(31),lName CHAR(31),c
 stu_cur.execute(stu_table)
 stu_cur.execute("SELECT * FROM Students")
 print(stu_cur.fetchall())
+viewedStu={}
+
 
 window = Tk()
 window.title("Digital Rewards Tracker")
@@ -40,17 +42,19 @@ passLbl.grid(column = 0, row = 1)
 password = Entry(window, show = "*", width = 30)
 password.grid(column = 1, row = 1)
 
+#Helper function for splitting student names into first and last 
 def splitStudentName(student):
     index = student.rfind(" ")
     fName = student[0 : index]
     lName = student[index + 1:]
     return [fName, lName]
 
+#Function takes in list of Student profiles from Radius and opens each in a new tab, recording full name and card count
 def recordStudent(students):
     driver.implicitly_wait(0)
     viewedStu={}
     for stu in students:
-        driver.execute_script("window.open('%s', '_blank')" %stu.get_attribute('href'))
+        driver.execute_script("window.open('%s', '_blank')" % stu.get_attribute('href'))
         driver.switch_to.window(driver.window_handles[-1])
         if driver.title in viewedStu:
             print("shazbot")
@@ -59,7 +63,8 @@ def recordStudent(students):
             [fHolder, lHolder] = splitStudentName(driver.title)
             cards = (int)(driver.find_element(By.ID, 'cardsAvailableDetail').text)
             print(driver.title + " " + str(cards))
-            stu_cur.execute("INSERT OR REPLACE INTO Students(fName, lName, cards) values(?,?,?)",(fHolder, lHolder, cards))
+            stu_cur.execute("INSERT OR IGNORE INTO Students(fName, lName, cards) values(?,?,?)",(fHolder, lHolder, cards))
+            stu_cur.execute("UPDATE Students SET cards = ? WHERE fName = ? AND lName = ?", (cards, fHolder, lHolder))
             stu_db.commit()
         driver.close()
         driver.switch_to.window(driver.window_handles[0])
@@ -70,7 +75,7 @@ def parseStudents():
     driver.implicitly_wait(5)
     studentReg = "//a[starts-with(@href, '/Student/Details')]"
     studentList = driver.find_elements(By.XPATH, studentReg)
-    recordStudent(studentList)
+    #recordStudent(studentList)
 
 #Function interacts with Student Management page, TODO: update to dynamically select enrollment filter
 def generateStudents():
@@ -93,13 +98,15 @@ def loginSub():
     driver.find_element(By.ID, "Password").send_keys(pWord)
     driver.find_element(By.ID, "login").click()
     if not("Login" in driver.current_url):
+        generateStudents()
+        studentCount = len(viewedStu)
         submitButton.destroy()
         passLbl.destroy()
         uNameLbl.destroy()
         userName.destroy()
         password.destroy()
-        generateStudents()
         window.geometry('1200x800')
+        
     else:
         errorLbl = Label(window, text = "ERROR: Unable to login")
         errorLbl.grid(column = 1, row = 2)
