@@ -21,12 +21,9 @@ action = ActionChains(driver)
 
 stu_db = sqlite3.connect("students.db")
 stu_cur = stu_db.cursor()
-stu_table = """CREATE TABLE IF NOT EXISTS Students(
-                fName CHAR(31),
-                lName CHAR(31),
-                cards INT
-            );"""
+stu_table = "CREATE TABLE IF NOT EXISTS Students(fName CHAR(31),lName CHAR(31),cards INT, UNIQUE(fName, lName));"
 stu_cur.execute(stu_table)
+stu_cur.execute("SELECT * FROM Students")
 print(stu_cur.fetchall())
 
 window = Tk()
@@ -47,8 +44,7 @@ def splitStudentName(student):
     index = student.rfind(" ")
     fName = student[0 : index]
     lName = student[index + 1:]
-    print("first: " + fName)
-    print("last: " + lName)
+    return [fName, lName]
 
 def recordStudent(students):
     driver.implicitly_wait(0)
@@ -60,9 +56,11 @@ def recordStudent(students):
             print("shazbot")
         else:
             viewedStu[driver.title] = True
-            splitStudentName(driver.title)
+            [fHolder, lHolder] = splitStudentName(driver.title)
             cards = (int)(driver.find_element(By.ID, 'cardsAvailableDetail').text)
             print(driver.title + " " + str(cards))
+            stu_cur.execute("INSERT OR REPLACE INTO Students(fName, lName, cards) values(?,?,?)",(fHolder, lHolder, cards))
+            stu_db.commit()
         driver.close()
         driver.switch_to.window(driver.window_handles[0])
         
@@ -73,9 +71,6 @@ def parseStudents():
     studentReg = "//a[starts-with(@href, '/Student/Details')]"
     studentList = driver.find_elements(By.XPATH, studentReg)
     recordStudent(studentList)
-    #studentTable = driver.find_element(By.CLASS_NAME, 'k-master-row')
-    #driver.find_element(By.XPATH, "//table/div[@id='gridStudent']")
-    #print(studentTable.get_attribute('innerHTML'))
 
 #Function interacts with Student Management page, TODO: update to dynamically select enrollment filter
 def generateStudents():
