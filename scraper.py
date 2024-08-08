@@ -35,6 +35,8 @@ print(stuCur.fetchall())
 window = Tk()
 window.title("Digital Rewards Tracker")
 window.geometry('350x200')
+WINDOW_HEIGHT = 800
+WINDOW_WIDTH = 1200
 
 uNameLbl = Label(window, text="Username")
 uNameLbl.grid(column = 0, row = 0)
@@ -114,16 +116,22 @@ def generateStudents():
 
 #Function changes tkinter window to UX that students can interact with 
 def createStudentDisplay():
+    window.grid_rowconfigure(0, weight = 1)
+
+    outerFrame = Frame(window, bg = "red")
+    outerFrame.grid(row = 0, column = 0, sticky = "N")
+
+    frameCanvas = Canvas(outerFrame, bg = "yellow")
+    frameCanvas.grid(row = 0, column = 0, sticky = "news")
+    
     rowWidgets = 1
     rowLCV = 0
-    scrollbar = Scrollbar(window)
-    scrollbar.grid(sticky = 'ns')
     for row in stuCur.execute("SELECT * FROM Students ORDER BY fName ASC"):
         for col in range(rowWidgets):
             fName, lName, cards = row
             studentInfo = f'{fName} {lName}:  {cards}'
-            widg = Label(window, text = studentInfo, width = 30, font = ('Arial', 16, 'bold'))
-            widg.grid(column = col, row = rowLCV)
+            #widg = Label(innerFrame, text = studentInfo, width = 30, font = ('Arial', 16, 'bold'))
+            #widg.grid(column = col, row = rowLCV)
             rowLCV += 1
     
 #Function access 'Student Management' page, handles login on intial boot 
@@ -136,15 +144,12 @@ def loginSub():
     driver.find_element(By.ID, "login").click()
     if not("Login" in driver.current_url):
         generateStudents()
-        stuCur.execute("SELECT COUNT(*) FROM Students")
-        stuCount = stuCur.fetchone()[0]
-        print(stuCount)
         submitButton.destroy()
         passLbl.destroy()
         uNameLbl.destroy()
         userName.destroy()
         password.destroy()
-        window.geometry('1200x800')
+        window.geometry(f'{WINDOW_WIDTH}x{WINDOW_HEIGHT}')
         createStudentDisplay()
     else:
         errorLbl = Label(window, text = "ERROR: Unable to login")
