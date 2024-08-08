@@ -13,6 +13,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 
+#Selenium 
 loginUrl= "https://radius.mathnasium.com/Student"
 DRIVER_PATH = './chromedriver.exe'
 service = Service(executable_path=DRIVER_PATH)
@@ -22,13 +23,15 @@ options.add_argument("--blink-settings=imageEnabled=false")
 driver = webdriver.Chrome(service=service, options=options)
 action = ActionChains(driver)
 
+#SQLite 
 stuDB = sqlite3.connect("students.db")
 stuCur = stuDB.cursor()
 stuTable = "CREATE TABLE IF NOT EXISTS Students(fName CHAR(31),lName CHAR(31),cards INT, UNIQUE(fName, lName));"
 stuCur.execute(stuTable)
-stuCur.execute("SELECT * FROM Students")
+stuCur.execute("SELECT * FROM Students ORDER BY fName ASC")
 print(stuCur.fetchall())
 
+#Tkinter widgets
 window = Tk()
 window.title("Digital Rewards Tracker")
 window.geometry('350x200')
@@ -88,11 +91,14 @@ def recordStudent(students):
 def parseStudents():
     driver.implicitly_wait(5)
     studentReg = "//a[starts-with(@href, '/Student/Details')]"
+    global studentList
     studentList = driver.find_elements(By.XPATH, studentReg)
-    print("Pre-prune size: " + str(len(studentList)))
+    """debug prints"""
+    #print("Pre-prune size: " + str(len(studentList)))
     pruneStudents(studentList)
-    print("Post-prune size: " + str(len(studentList)))
-    recordStudent(studentList)
+    #print("Post-prune size: " + str(len(studentList)))
+    #recordStudent(studentList)
+    
 
 #Function interacts with Student Management page, TODO: update to dynamically select enrollment filter
 def generateStudents():
@@ -100,11 +106,25 @@ def generateStudents():
     enrollFilterPath = "//div[@class='container']//div[@id='single-Grid-Page']/div[2]/div[1]/div[1]/div[3]/div[1]/span[1]"
     enFill = driver.find_element(By.XPATH, enrollFilterPath)
     enFill.click()
-    for i in range(3) :
+    for i in range(3): #manually scrolls through Enrollment Filters, should be fixed to dynamically find "enrolled"
         enFill.send_keys(Keys.DOWN)
     enFill.send_keys(Keys.ENTER)
     driver.find_element(By.ID, 'btnsearch').click()
     parseStudents()
+
+#Function changes tkinter window to UX that students can interact with 
+def createStudentDisplay():
+    rowWidgets = 1
+    rowLCV = 0
+    scrollbar = Scrollbar(window)
+    scrollbar.grid(sticky = 'ns')
+    for row in stuCur.execute("SELECT * FROM Students ORDER BY fName ASC"):
+        for col in range(rowWidgets):
+            fName, lName, cards = row
+            studentInfo = f'{fName} {lName}:  {cards}'
+            widg = Label(window, text = studentInfo, width = 30, font = ('Arial', 16, 'bold'))
+            widg.grid(column = col, row = rowLCV)
+            rowLCV += 1
     
 #Function access 'Student Management' page, handles login on intial boot 
 def loginSub():
@@ -125,7 +145,7 @@ def loginSub():
         userName.destroy()
         password.destroy()
         window.geometry('1200x800')
-        
+        createStudentDisplay()
     else:
         errorLbl = Label(window, text = "ERROR: Unable to login")
         errorLbl.grid(column = 1, row = 2)
