@@ -118,24 +118,43 @@ def generateStudents():
 def createStudentDisplay():
     window.grid_rowconfigure(0, weight = 1)
 
-    outerFrame = Frame(window, bg = "red")
-    outerFrame.grid(row = 0, column = 0, sticky = "N")
+    outerFrame = Frame(window, bg = "red", bd = 5, relief = "flat")
+    outerFrame.grid(row = 0, column = 0, sticky = "NW")
+    #outerFrame.grid_propagate(False)
 
-    frameCanvas = Canvas(outerFrame, bg = "yellow")
-    frameCanvas.grid(row = 0, column = 0, sticky = "news")
+    frameCanvas = Canvas(outerFrame, bg = "yellow", bd = 5)
+    frameCanvas.grid(row = 0, column = 0)
+
+    vsb = Scrollbar(outerFrame, orient = "vertical", command = frameCanvas.yview)
+    vsb.grid(row = 0, column = 1, sticky = 'NS')
+    frameCanvas.configure(yscrollcommand = vsb.set)
+
+    studentFrame = Frame(frameCanvas, bg = "blue")
+    records = stuCur.execute("SELECT * FROM Students ORDER BY fName ASC")
+    print(len(records.fetchall()))
+    studentFrame.rowconfigure(len(records.fetchall()))
+    #frameCanvas.create_window((0,0), window = studentFrame, anchor = 'nw')
+    #testLbl = Label(studentFrame, text = "SHAZBOT")
+    #testLbl.grid(column = 0, row = 0)
     
     rowWidgets = 1
     rowLCV = 0
     for row in stuCur.execute("SELECT * FROM Students ORDER BY fName ASC"):
-        for col in range(rowWidgets):
-            fName, lName, cards = row
-            studentInfo = f'{fName} {lName}:  {cards}'
-            #widg = Label(innerFrame, text = studentInfo, width = 30, font = ('Arial', 16, 'bold'))
-            #widg.grid(column = col, row = rowLCV)
-            rowLCV += 1
+        fName, lName, cards = row
+        studentInfo = f'{fName} {lName}:  {cards}'
+        print(studentInfo)
+        widg = Label(studentFrame, text = studentInfo, width = 30, font = ('Arial', 16, 'bold'))
+        widg.grid(column = 0, row = rowLCV, sticky = 'news')
+        rowLCV += 1
+
+    frameCanvas.update_idletasks()
+    frameCanvas.create_window((0,0), window = studentFrame, anchor = 'nw')
+    frameCanvas.config(scrollregion=frameCanvas.bbox("all"))
+    
     
 #Function access 'Student Management' page, handles login on intial boot 
 def loginSub():
+    errorLbl = Label(window, text = "ERROR: Unable to login")
     uName = userName.get()
     pWord = password.get() 
     driver.get(loginUrl)
@@ -143,6 +162,7 @@ def loginSub():
     driver.find_element(By.ID, "Password").send_keys(pWord)
     driver.find_element(By.ID, "login").click()
     if not("Login" in driver.current_url):
+        errorLbl.destroy()
         generateStudents()
         submitButton.destroy()
         passLbl.destroy()
@@ -152,7 +172,6 @@ def loginSub():
         window.geometry(f'{WINDOW_WIDTH}x{WINDOW_HEIGHT}')
         createStudentDisplay()
     else:
-        errorLbl = Label(window, text = "ERROR: Unable to login")
         errorLbl.grid(column = 1, row = 2)
     #browser.launch_browser()
     
