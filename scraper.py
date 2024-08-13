@@ -16,6 +16,28 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 
+class Student():
+
+    def __init__(self):
+        fName = ""
+        lName = ""
+        cards = 0
+        href = ""
+        lbl = None
+        btn = None
+
+    def __init__(self, fName, lName, cards, href, studentFrame, isPrime):
+        self.fName = fName
+        self.lName = lName
+        self.cards = cards
+        self.href = href
+        studentInfo = f'{fName} {lName}:  {cards}'
+        self.lbl = Label(studentFrame, text = studentInfo, width = 30, font = ('Arial', 16, 'bold'))
+        if not isPrime:
+            self.lbl.configure(bg = "gray")
+
+            
+
 #Selenium 
 loginUrl= "https://radius.mathnasium.com/Student"
 DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe')
@@ -99,7 +121,7 @@ def parseStudents():
     global studentList
     studentList = driver.find_elements(By.XPATH, studentReg)
     pruneStudents(studentList)#clear student list of duplicates
-    recordStudent(studentList)
+    #recordStudent(studentList)
     
 
 #Function interacts with Student Management page, TODO: update to dynamically select enrollment filter
@@ -114,16 +136,21 @@ def generateStudents():
     driver.find_element(By.ID, 'btnsearch').click()
     parseStudents()
 
+#function that controls refresh button in main GUI display
+def refreshCards():
+    print("Refreshing...")
+
 #Function changes tkinter window to UX that students can interact with 
 def createStudentDisplay():
     window.grid_rowconfigure(0, weight = 1)
 
     #RedFrame
-    outerFrame = Frame(window, bg = "red", bd = 5, relief = "flat")
+    outerFrame = Frame(window, bd = 5, relief = "flat")
     outerFrame.grid(row = 0, column = 0, sticky = "NW")
 
     #Yellow Canvas
-    frameCanvas = Canvas(outerFrame, bg = "yellow", height = WINDOW_HEIGHT - 100, width = WINDOW_WIDTH - 100, bd = 5)
+    frameCanvas = Canvas(outerFrame, height = WINDOW_HEIGHT - 100, width = WINDOW_WIDTH - 100, bd = 5)
+    frameCanvas.configure(bg = "yellow")
     frameCanvas.grid(row = 0, column = 0)
 
     vsb = Scrollbar(outerFrame, orient = "vertical", command = frameCanvas.yview, width = 80)
@@ -131,7 +158,7 @@ def createStudentDisplay():
     frameCanvas.configure(yscrollcommand = vsb.set)
 
     #Blue Inner Frame
-    studentFrame = Frame(frameCanvas, bg = "blue")
+    studentFrame = Frame(frameCanvas)
     records = stuCur.execute("SELECT * FROM Students ORDER BY fName ASC")
     print(len(records.fetchall()))
     studentFrame.rowconfigure(len(records.fetchall()))
@@ -150,7 +177,7 @@ def createStudentDisplay():
             widg = Label(studentFrame, text = studentInfo, width = 30, font = ('Arial', 16, 'bold'))
         else:
             widg = Label(studentFrame, text = studentInfo, width = 30, font = ('Arial', 16, 'bold'), bg = "gray")
-        refreshBtn = Button(studentFrame, text = "REFRESH")
+        refreshBtn = Button(studentFrame, text = "REFRESH", command = refreshCards)
         primeRow = not primeRow
         widg.grid(column = 0, row = rowLCV, sticky = 'news')
         refreshBtn.grid(column = 1, row = rowLCV, sticky = 'news', padx = 40)
