@@ -4,6 +4,9 @@ import sqlite3
 from tkinter import *
 import datetime
 import multiprocessing
+import os
+import sys
+import chromedriver_binary
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -15,13 +18,14 @@ from selenium.webdriver.common.action_chains import ActionChains
 
 #Selenium 
 loginUrl= "https://radius.mathnasium.com/Student"
-DRIVER_PATH = './chromedriver.exe'
+DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe')
 service = Service(executable_path=DRIVER_PATH)
 options = webdriver.ChromeOptions()
-options.add_argument("--headless=new")
+#options.add_argument("--headless=new")
 options.add_argument("--blink-settings=imageEnabled=false")
 driver = webdriver.Chrome(service=service, options=options)
 action = ActionChains(driver)
+STUDENT_HREFS = {}
 
 #SQLite 
 stuDB = sqlite3.connect("students.db")
@@ -36,7 +40,7 @@ window = Tk()
 window.title("Digital Rewards Tracker")
 window.geometry('350x200')
 WINDOW_HEIGHT = 800
-WINDOW_WIDTH = 1200
+WINDOW_WIDTH = 800
 
 uNameLbl = Label(window, text="Username")
 uNameLbl.grid(column = 0, row = 0)
@@ -70,7 +74,6 @@ def pruneStudents(studentList):
 #Function takes in list of Student profiles from Radius and opens each in a new tab, recording full name and card count
 def recordStudent(students):
     driver.implicitly_wait(0)
-    viewedStu={}
     startTime = datetime.datetime.now()
     for stu in students:
         driver.execute_script("window.open('%s', '_blank')" % stu.get_attribute('href'))
@@ -95,11 +98,8 @@ def parseStudents():
     studentReg = "//a[starts-with(@href, '/Student/Details')]"
     global studentList
     studentList = driver.find_elements(By.XPATH, studentReg)
-    """debug prints"""
-    #print("Pre-prune size: " + str(len(studentList)))
-    pruneStudents(studentList)
-    #print("Post-prune size: " + str(len(studentList)))
-    #recordStudent(studentList)
+    pruneStudents(studentList)#clear student list of duplicates
+    recordStudent(studentList)
     
 
 #Function interacts with Student Management page, TODO: update to dynamically select enrollment filter
@@ -118,17 +118,19 @@ def generateStudents():
 def createStudentDisplay():
     window.grid_rowconfigure(0, weight = 1)
 
+    #RedFrame
     outerFrame = Frame(window, bg = "red", bd = 5, relief = "flat")
     outerFrame.grid(row = 0, column = 0, sticky = "NW")
-    #outerFrame.grid_propagate(False)
 
-    frameCanvas = Canvas(outerFrame, bg = "yellow", bd = 5)
+    #Yellow Canvas
+    frameCanvas = Canvas(outerFrame, bg = "yellow", height = WINDOW_HEIGHT - 100, width = WINDOW_WIDTH - 100, bd = 5)
     frameCanvas.grid(row = 0, column = 0)
 
-    vsb = Scrollbar(outerFrame, orient = "vertical", command = frameCanvas.yview)
+    vsb = Scrollbar(outerFrame, orient = "vertical", command = frameCanvas.yview, width = 80)
     vsb.grid(row = 0, column = 1, sticky = 'NS')
     frameCanvas.configure(yscrollcommand = vsb.set)
 
+    #Blue Inner Frame
     studentFrame = Frame(frameCanvas, bg = "blue")
     records = stuCur.execute("SELECT * FROM Students ORDER BY fName ASC")
     print(len(records.fetchall()))
@@ -138,13 +140,20 @@ def createStudentDisplay():
     #testLbl.grid(column = 0, row = 0)
     
     rowWidgets = 1
-    rowLCV = 0
+    rowLCV = 1
+    primeRow = True
     for row in stuCur.execute("SELECT * FROM Students ORDER BY fName ASC"):
         fName, lName, cards = row
         studentInfo = f'{fName} {lName}:  {cards}'
-        print(studentInfo)
-        widg = Label(studentFrame, text = studentInfo, width = 30, font = ('Arial', 16, 'bold'))
+        #print(studentInfo)
+        if(primeRow):
+            widg = Label(studentFrame, text = studentInfo, width = 30, font = ('Arial', 16, 'bold'))
+        else:
+            widg = Label(studentFrame, text = studentInfo, width = 30, font = ('Arial', 16, 'bold'), bg = "gray")
+        refreshBtn = Button(studentFrame, text = "REFRESH")
+        primeRow = not primeRow
         widg.grid(column = 0, row = rowLCV, sticky = 'news')
+        refreshBtn.grid(column = 1, row = rowLCV, sticky = 'news', padx = 40)
         rowLCV += 1
 
     frameCanvas.update_idletasks()
