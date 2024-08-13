@@ -16,17 +16,26 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 
+#Selenium 
+loginUrl= "https://radius.mathnasium.com/Student"
+DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe')
+service = Service(executable_path=DRIVER_PATH)
+options = webdriver.ChromeOptions()
+options.add_argument("--headless=new")
+options.add_argument("--blink-settings=imageEnabled=false")
+driver = webdriver.Chrome(service=service, options=options)
+action = ActionChains(driver)
+
+
+STUDENT_HREFS = {}
+
+#function that controls refresh button in main GUI display
+def refreshCards():
+    print("Refreshing...")
+
 class Student():
 
-    def __init__(self):
-        fName = ""
-        lName = ""
-        cards = 0
-        href = ""
-        lbl = None
-        btn = None
-
-    def __init__(self, fName, lName, cards, href, studentFrame, isPrime):
+    def __init__(self, fName, lName, cards, href, studentFrame, isPrime, rowLCV):
         self.fName = fName
         self.lName = lName
         self.cards = cards
@@ -35,19 +44,13 @@ class Student():
         self.lbl = Label(studentFrame, text = studentInfo, width = 30, font = ('Arial', 16, 'bold'))
         if not isPrime:
             self.lbl.configure(bg = "gray")
+        self.btn = Button(studentFrame, text = "REFRESH", command = refreshCards)
+        self.lbl.grid(column = 0, row = rowLCV, sticky = 'news')
+        self.btn.grid(column = 1, row = rowLCV, sticky = 'news', padx = 40)
 
-            
-
-#Selenium 
-loginUrl= "https://radius.mathnasium.com/Student"
-DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe')
-service = Service(executable_path=DRIVER_PATH)
-options = webdriver.ChromeOptions()
-#options.add_argument("--headless=new")
-options.add_argument("--blink-settings=imageEnabled=false")
-driver = webdriver.Chrome(service=service, options=options)
-action = ActionChains(driver)
-STUDENT_HREFS = {}
+        #function that controls refresh button in main GUI display
+    def refreshCards():
+        print("Refreshing...")
 
 #SQLite 
 stuDB = sqlite3.connect("students.db")
@@ -98,14 +101,16 @@ def recordStudent(students):
     driver.implicitly_wait(0)
     startTime = datetime.datetime.now()
     for stu in students:
-        driver.execute_script("window.open('%s', '_blank')" % stu.get_attribute('href'))
+        stuHref = stu.get_attribute('href')
+        driver.execute_script("window.open('%s', '_blank')" % stuHref)
         driver.switch_to.window(driver.window_handles[-1])
         [fHolder, lHolder] = splitStudentName(driver.title)
-        cards = (int)(driver.find_element(By.ID, 'cardsAvailableDetail').text)
-        print(driver.title + " " + str(cards))
-        stuCur.execute("INSERT OR IGNORE INTO Students(fName, lName, cards) values(?,?,?)",(fHolder, lHolder, cards))
-        stuCur.execute("UPDATE Students SET cards = ? WHERE fName = ? AND lName = ?", (cards, fHolder, lHolder))
-        stuDB.commit()
+        STUDENT_HREFS[driver.title] = stuHref
+        #cards = (int)(driver.find_element(By.ID, 'cardsAvailableDetail').text)
+        #print(driver.title + " " + str(cards))
+        #stuCur.execute("INSERT OR IGNORE INTO Students(fName, lName, cards) values(?,?,?)",(fHolder, lHolder, cards))
+        #stuCur.execute("UPDATE Students SET cards = ? WHERE fName = ? AND lName = ?", (cards, fHolder, lHolder))
+        #stuDB.commit()
         driver.close()
         driver.switch_to.window(driver.window_handles[0])
     print(startTime.time())
@@ -121,7 +126,7 @@ def parseStudents():
     global studentList
     studentList = driver.find_elements(By.XPATH, studentReg)
     pruneStudents(studentList)#clear student list of duplicates
-    #recordStudent(studentList)
+    recordStudent(studentList)
     
 
 #Function interacts with Student Management page, TODO: update to dynamically select enrollment filter
@@ -162,25 +167,25 @@ def createStudentDisplay():
     records = stuCur.execute("SELECT * FROM Students ORDER BY fName ASC")
     print(len(records.fetchall()))
     studentFrame.rowconfigure(len(records.fetchall()))
-    #frameCanvas.create_window((0,0), window = studentFrame, anchor = 'nw')
-    #testLbl = Label(studentFrame, text = "SHAZBOT")
-    #testLbl.grid(column = 0, row = 0)
-    
-    rowWidgets = 1
+
+    studentEntries = []
     rowLCV = 1
     primeRow = True
     for row in stuCur.execute("SELECT * FROM Students ORDER BY fName ASC"):
         fName, lName, cards = row
         studentInfo = f'{fName} {lName}:  {cards}'
+        stuHref = STUDENT_HREFS[str(fName) + " " + str(lName)]
+        stuEntry = Student(fName, lName, cards, stuHref, studentFrame, primeRow, rowLCV)
         #print(studentInfo)
-        if(primeRow):
-            widg = Label(studentFrame, text = studentInfo, width = 30, font = ('Arial', 16, 'bold'))
-        else:
-            widg = Label(studentFrame, text = studentInfo, width = 30, font = ('Arial', 16, 'bold'), bg = "gray")
-        refreshBtn = Button(studentFrame, text = "REFRESH", command = refreshCards)
+        #if(primeRow):
+            #widg = Label(studentFrame, text = studentInfo, width = 30, font = ('Arial', 16, 'bold'))
+        #else:
+            #widg = Label(studentFrame, text = studentInfo, width = 30, font = ('Arial', 16, 'bold'), bg = "gray")
+        #refreshBtn = Button(studentFrame, text = "REFRESH", command = refreshCards)
         primeRow = not primeRow
-        widg.grid(column = 0, row = rowLCV, sticky = 'news')
-        refreshBtn.grid(column = 1, row = rowLCV, sticky = 'news', padx = 40)
+        studentEntries.append(stuEntry)
+        #widg.grid(column = 0, row = rowLCV, sticky = 'news')
+        #refreshBtn.grid(column = 1, row = rowLCV, sticky = 'news', padx = 40)
         rowLCV += 1
 
     frameCanvas.update_idletasks()
