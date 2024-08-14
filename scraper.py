@@ -28,10 +28,7 @@ action = ActionChains(driver)
 
 
 STUDENT_HREFS = {}
-
-#function that controls refresh button in main GUI display
-def refreshCards():
-    print("Refreshing...")
+    
 
 class Student():
 
@@ -44,13 +41,22 @@ class Student():
         self.lbl = Label(studentFrame, text = studentInfo, width = 30, font = ('Arial', 16, 'bold'))
         if not isPrime:
             self.lbl.configure(bg = "gray")
-        self.btn = Button(studentFrame, text = "REFRESH", command = refreshCards)
+        self.btn = Button(studentFrame, text = "REFRESH", command = self.refreshCards)
         self.lbl.grid(column = 0, row = rowLCV, sticky = 'news')
         self.btn.grid(column = 1, row = rowLCV, sticky = 'news', padx = 40)
 
-        #function that controls refresh button in main GUI display
-    def refreshCards():
-        print("Refreshing...")
+    #function that controls refresh button in main GUI display
+    def refreshCards(self):
+        href = STUDENT_HREFS[self.fName + " " + self.lName]
+        driver.execute_script("window.open('%s', '_blank')" % href)
+        driver.switch_to.window(driver.window_handles[-1])
+        self.cards = (int)(driver.find_element(By.ID, 'cardsAvailableDetail').text)
+        stuCur.execute("UPDATE Students SET cards = ? WHERE fName = ? AND lName = ?", (self.cards, self.fName, self.lName))
+        stuDB.commit()
+        driver.close()
+        driver.switch_to.window(driver.window_handles[0])
+        studentInfo = f'{self.fName} {self.lName}: {self.cards}'
+        self.lbl.config(text = studentInfo)
 
 #SQLite 
 stuDB = sqlite3.connect("students.db")
@@ -140,10 +146,6 @@ def generateStudents():
     enFill.send_keys(Keys.ENTER)
     driver.find_element(By.ID, 'btnsearch').click()
     parseStudents()
-
-#function that controls refresh button in main GUI display
-def refreshCards():
-    print("Refreshing...")
 
 #Function changes tkinter window to UX that students can interact with 
 def createStudentDisplay():
