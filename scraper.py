@@ -1,5 +1,4 @@
 from urllib.request import urlopen
-import mechanicalsoup
 import sqlite3
 from tkinter import *
 import datetime
@@ -45,7 +44,7 @@ class Student():
         self.lbl.grid(column = 0, row = rowLCV, sticky = 'news')
         self.btn.grid(column = 1, row = rowLCV, sticky = 'news', padx = 40)
 
-    #function that controls refresh button in main GUI display
+    #function that controls refresh button behavior in main GUI display
     def refreshCards(self):
         href = STUDENT_HREFS[self.fName + " " + self.lName]
         driver.execute_script("window.open('%s', '_blank')" % href)
@@ -112,11 +111,11 @@ def recordStudent(students):
         driver.switch_to.window(driver.window_handles[-1])
         [fHolder, lHolder] = splitStudentName(driver.title)
         STUDENT_HREFS[driver.title] = stuHref
-        #cards = (int)(driver.find_element(By.ID, 'cardsAvailableDetail').text)
-        #print(driver.title + " " + str(cards))
-        #stuCur.execute("INSERT OR IGNORE INTO Students(fName, lName, cards) values(?,?,?)",(fHolder, lHolder, cards))
-        #stuCur.execute("UPDATE Students SET cards = ? WHERE fName = ? AND lName = ?", (cards, fHolder, lHolder))
-        #stuDB.commit()
+        cards = (int)(driver.find_element(By.ID, 'cardsAvailableDetail').text)
+        print(driver.title + " " + str(cards))
+        stuCur.execute("INSERT OR IGNORE INTO Students(fName, lName, cards) values(?,?,?)",(fHolder, lHolder, cards))
+        stuCur.execute("UPDATE Students SET cards = ? WHERE fName = ? AND lName = ?", (cards, fHolder, lHolder))
+        stuDB.commit()
         driver.close()
         driver.switch_to.window(driver.window_handles[0])
     print(startTime.time())
@@ -178,18 +177,9 @@ def createStudentDisplay():
         studentInfo = f'{fName} {lName}:  {cards}'
         stuHref = STUDENT_HREFS[str(fName) + " " + str(lName)]
         stuEntry = Student(fName, lName, cards, stuHref, studentFrame, primeRow, rowLCV)
-        #print(studentInfo)
-        #if(primeRow):
-            #widg = Label(studentFrame, text = studentInfo, width = 30, font = ('Arial', 16, 'bold'))
-        #else:
-            #widg = Label(studentFrame, text = studentInfo, width = 30, font = ('Arial', 16, 'bold'), bg = "gray")
-        #refreshBtn = Button(studentFrame, text = "REFRESH", command = refreshCards)
         primeRow = not primeRow
         studentEntries.append(stuEntry)
-        #widg.grid(column = 0, row = rowLCV, sticky = 'news')
-        #refreshBtn.grid(column = 1, row = rowLCV, sticky = 'news', padx = 40)
         rowLCV += 1
-
     frameCanvas.update_idletasks()
     frameCanvas.create_window((0,0), window = studentFrame, anchor = 'nw')
     frameCanvas.config(scrollregion=frameCanvas.bbox("all"))
