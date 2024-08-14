@@ -5,6 +5,7 @@ import datetime
 import multiprocessing
 import os
 import sys
+import pickle
 import chromedriver_binary
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -25,9 +26,13 @@ options.add_argument("--blink-settings=imageEnabled=false")
 driver = webdriver.Chrome(service=service, options=options)
 action = ActionChains(driver)
 
-
-STUDENT_HREFS = {}
-    
+#Global variable to for all Selenium driver instances
+"""Pickle file must go in order as follows:
+1. datetime object - last timestamp that the student list was parsed
+2. integer - number of enrolled students
+3. dictionary - STUDENT_HREFS with (full name, link to student page) key/value pairs
+"""
+PICKLE_FILE = 'timestamp.pkl'
 
 class Student():
 
@@ -61,9 +66,9 @@ class Student():
 stuDB = sqlite3.connect("students.db")
 stuCur = stuDB.cursor()
 stuTable = "CREATE TABLE IF NOT EXISTS Students(fName CHAR(31),lName CHAR(31),cards INT, UNIQUE(fName, lName));"
-stuCur.execute(stuTable)
-stuCur.execute("SELECT * FROM Students ORDER BY fName ASC")
-print(stuCur.fetchall())
+#stuCur.execute(stuTable)
+#stuCur.execute("SELECT * FROM Students ORDER BY fName ASC")
+#print(stuCur.fetchall())
 
 #Tkinter widgets
 window = Tk()
@@ -102,9 +107,36 @@ def pruneStudents(studentList):
             studentList.pop(lcv)
 
 #Function takes in list of Student profiles from Radius and opens each in a new tab, recording full name and card count
+#Function uses pickling to determine last time the full student list was parsed as well as if students were dropped/added
 def recordStudent(students):
     driver.implicitly_wait(0)
     startTime = datetime.datetime.now()
+    timeout = 12 #hours
+    
+    global STUDENT_HREFS
+    STUDENT_HREFS = {}
+    with open(PICKLE_FILE, 'rb+') as file:
+        try:
+            lastTime = pickle.load(file)
+            print("Last timestamp found")
+            timeDiff = (startTime - lastTime).seconds / 3600 #converts time difference into hours
+            print(timeDiff)
+            studentCount = pickle.load(file)
+            print("Student count found")
+            if(timeDiff < timeout and len(students) == studentCount):
+                STUDENT_HREFS = pickle.load(file)
+                print("STUDENT_HREFS loaded: ")
+                print(STUDENT_HREFS)
+                file.close()
+                print("within 12 hours of last update, skipping database refresh...")
+                return
+            print("over 12 hours since last database update, refreshing student information...")
+        except:
+            print("ERROR: Unsuccessful fetching of time stamp or student hrefs, proceeding with database refresh...")
+        file.close()
+    print("parsing student information...")
+    
+    STUDENT_HREFS = {} #reset dictionary, previous unsuccessful unpickling sets variable as NoneType otherwise
     for stu in students:
         stuHref = stu.get_attribute('href')
         driver.execute_script("window.open('%s', '_blank')" % stuHref)
@@ -118,9 +150,18 @@ def recordStudent(students):
         stuDB.commit()
         driver.close()
         driver.switch_to.window(driver.window_handles[0])
-    print(startTime.time())
+        
+    print(STUDENT_HREFS)
     finishTime = datetime.datetime.now()
-    print(finishTime.time())
+    with open(PICKLE_FILE, 'wb+') as file:
+        pickle.dump(finishTime, file)
+        print(str(finishTime) + " time stamp has been pickled")
+        pickle.dump(len(students), file)
+        print("studentCount has been pickled")
+        pickle.dump(STUDENT_HREFS, file)
+        print("STUDENT_HREFS have been pickled")
+        file.close()
+    
         
 
 
@@ -150,11 +191,11 @@ def generateStudents():
 def createStudentDisplay():
     window.grid_rowconfigure(0, weight = 1)
 
-    #RedFrame
+    #Main Frame to hold list of students
     outerFrame = Frame(window, bd = 5, relief = "flat")
     outerFrame.grid(row = 0, column = 0, sticky = "NW")
 
-    #Yellow Canvas
+    #Canvas which manages the grid of students
     frameCanvas = Canvas(outerFrame, height = WINDOW_HEIGHT - 100, width = WINDOW_WIDTH - 100, bd = 5)
     frameCanvas.configure(bg = "yellow")
     frameCanvas.grid(row = 0, column = 0)
@@ -185,7 +226,7 @@ def createStudentDisplay():
     frameCanvas.config(scrollregion=frameCanvas.bbox("all"))
     
     
-#Function access 'Student Management' page, handles login on intial boot 
+#Function accesses 'Student Management' page, handles login on intial boot 
 def loginSub():
     errorLbl = Label(window, text = "ERROR: Unable to login")
     uName = userName.get()
