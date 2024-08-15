@@ -2,6 +2,7 @@ from urllib.request import urlopen
 import sqlite3
 from tkinter import *
 import datetime
+import time
 import multiprocessing
 import os
 import sys
@@ -41,7 +42,7 @@ class Student():
         self.lName = lName
         self.cards = cards
         self.href = href
-        studentInfo = f'{fName} {lName}:  {cards}'
+        studentInfo = f'{fName} {lName}: {cards}'
         self.lbl = Label(studentFrame, text = studentInfo, width = 30, font = ('Arial', 16, 'bold'))
         if not isPrime:
             self.lbl.configure(bg = "gray")
@@ -52,7 +53,9 @@ class Student():
     #function that controls refresh button behavior in main GUI display
     def refreshCards(self):
         print("beginning refresh for " + self.fName + " " + self.lName)
+        refreshButtonAbility(False) #disables refresh buttons
 
+        #refresh message creation
         topMessage = Toplevel()
         topMessage.title("")
         refreshMsg = Message(topMessage, text = "Refreshing your card count, please be patient.", font = ('Arial', 25, 'bold'))
@@ -74,8 +77,10 @@ class Student():
         driver.switch_to.window(driver.window_handles[0])
         studentInfo = f'{self.fName} {self.lName}: {self.cards}'
         self.lbl.config(text = studentInfo)
+
         print("ending refresh for " + self.fName + " " + self.lName)
         topMessage.destroy()
+        refreshButtonAbility(True) #reenables refresh buttons 
         
 
 #SQLite 
@@ -99,6 +104,14 @@ passLbl = Label(window, text = "Password")
 passLbl.grid(column = 0, row = 1)
 password = Entry(window, show = "*", width = 30)
 password.grid(column = 1, row = 1)
+
+#Helper function that disables or enables all refresh buttons on main student UX
+def refreshButtonAbility(isEnabled):
+    for stu in studentEntries:
+        if(isEnabled):
+            stu.btn.config(state = NORMAL)
+        else:
+            stu.btn.config(state = DISABLED)
 
 #Helper function for splitting student names into first and last 
 def splitStudentName(student):
@@ -172,8 +185,6 @@ def recordStudent(students):
         print("STUDENT_HREFS have been pickled")
         file.close()
     
-        
-
 
 #Function handles capturing student information for database entry/updates
 def parseStudents():
@@ -206,7 +217,7 @@ def createStudentDisplay():
     outerFrame.grid(row = 0, column = 0, sticky = "NW")
 
     #Canvas which manages the grid of students
-    frameCanvas = Canvas(outerFrame, height = WINDOW_HEIGHT - 100, width = WINDOW_WIDTH - 100, bd = 5)
+    frameCanvas = Canvas(outerFrame, height = WINDOW_HEIGHT - 100, width = WINDOW_WIDTH - 300, bd = 5)
     frameCanvas.configure(bg = "yellow")
     frameCanvas.grid(row = 0, column = 0)
 
@@ -220,6 +231,7 @@ def createStudentDisplay():
     print(len(records.fetchall()))
     studentFrame.rowconfigure(len(records.fetchall()))
 
+    global studentEntries
     studentEntries = []
     rowLCV = 1
     primeRow = True
