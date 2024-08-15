@@ -20,7 +20,8 @@ from selenium.webdriver.common.action_chains import ActionChains
 
 #Selenium 
 loginUrl= "https://radius.mathnasium.com/Student"
-DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe')
+DRIVER_PATH = os.path.join(os.path.dirname(__file__), 'Drivers\chromedriver.exe') #File path for deliverable
+#DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') """ File path for local testing"""
 service = Service(executable_path=DRIVER_PATH)
 options = webdriver.ChromeOptions()
 options.add_argument("--headless=new")
@@ -77,7 +78,7 @@ class Student():
         stuDB.commit()
         driver.close()
         driver.switch_to.window(driver.window_handles[0])
-        studentInfo = f'{self.fName} {self.lName}: {self.cards}'
+        studentInfo = f'{self.fName} {self.lName}: {self.cards} cards'
         self.lbl.config(text = studentInfo)
 
         print("ending refresh for " + self.fName + " " + self.lName)
@@ -86,9 +87,10 @@ class Student():
         
 
 #SQLite 
-stuDB = sqlite3.connect("students.db")
+stuDB = sqlite3.connect("Students.db")
 stuCur = stuDB.cursor()
 stuTable = "CREATE TABLE IF NOT EXISTS Students(fName CHAR(31),lName CHAR(31),cards INT, UNIQUE(fName, lName));"
+stuCur.execute(stuTable)
 
 #Tkinter widgets
 window = Tk()
