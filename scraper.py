@@ -7,6 +7,7 @@ import multiprocessing
 import os
 import sys
 import pickle
+import threading
 import chromedriver_binary
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -44,9 +45,10 @@ class Student():
         self.href = href
         studentInfo = f'{fName} {lName}: {cards}'
         self.lbl = Label(studentFrame, text = studentInfo, width = 30, font = ('Arial', 16, 'bold'))
+        self.btn = Button(studentFrame, text = "REFRESH", width = 10, command = self.refreshCards)
         if not isPrime:
             self.lbl.configure(bg = "gray")
-        self.btn = Button(studentFrame, text = "REFRESH", command = self.refreshCards)
+            self.btn.configure(bg = "gray")
         self.lbl.grid(column = 0, row = rowLCV, sticky = 'news')
         self.btn.grid(column = 1, row = rowLCV, sticky = 'news', padx = 40)
 
@@ -218,7 +220,6 @@ def createStudentDisplay():
 
     #Canvas which manages the grid of students
     frameCanvas = Canvas(outerFrame, height = WINDOW_HEIGHT - 100, width = WINDOW_WIDTH - 300, bd = 5)
-    frameCanvas.configure(bg = "yellow")
     frameCanvas.grid(row = 0, column = 0)
 
     vsb = Scrollbar(outerFrame, orient = "vertical", command = frameCanvas.yview, width = 80)
