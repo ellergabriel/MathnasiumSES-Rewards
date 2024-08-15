@@ -1,8 +1,6 @@
 from urllib.request import urlopen
 import sqlite3
 from tkinter import *
-from tkinter import ttk
-from tkinter.ttk import Progressbar
 import datetime
 import multiprocessing
 import os
@@ -53,6 +51,18 @@ class Student():
 
     #function that controls refresh button behavior in main GUI display
     def refreshCards(self):
+        print("beginning refresh for " + self.fName + " " + self.lName)
+
+        topMessage = Toplevel()
+        topMessage.title("")
+        refreshMsg = Message(topMessage, text = "Refreshing your card count, please be patient.", font = ('Arial', 25, 'bold'))
+        refreshMsg.pack(expand = True)
+        topMessage.geometry('400x400')
+        topX = window.winfo_x() + window.winfo_width()//2 - topMessage.winfo_width()//2
+        topY = window.winfo_y() + window.winfo_height()//2 - topMessage.winfo_height()//2
+        topMessage.geometry(f"+{topX}+{topY}")
+        topMessage.update()
+        
         href = STUDENT_HREFS[self.fName + " " + self.lName]
         driver.execute_script("window.open('%s', '_blank')" % href)
         driver.switch_to.window(driver.window_handles[-1])
@@ -63,14 +73,14 @@ class Student():
         driver.switch_to.window(driver.window_handles[0])
         studentInfo = f'{self.fName} {self.lName}: {self.cards}'
         self.lbl.config(text = studentInfo)
+        print("ending refresh for " + self.fName + " " + self.lName)
+        topMessage.destroy()
+        
 
 #SQLite 
 stuDB = sqlite3.connect("students.db")
 stuCur = stuDB.cursor()
 stuTable = "CREATE TABLE IF NOT EXISTS Students(fName CHAR(31),lName CHAR(31),cards INT, UNIQUE(fName, lName));"
-#stuCur.execute(stuTable)
-#stuCur.execute("SELECT * FROM Students ORDER BY fName ASC")
-#print(stuCur.fetchall())
 
 #Tkinter widgets
 window = Tk()
@@ -134,7 +144,6 @@ def recordStudent(students):
             print("over 12 hours since last database update, refreshing student information...")
     except:
         print("ERROR: Unsuccessful fetching of time stamp or student hrefs, proceeding with database refresh...")
-        #file.close()
     print("parsing student information...")
     
     STUDENT_HREFS = {} #reset dictionary, previous unsuccessful unpickling sets variable as NoneType otherwise
@@ -254,7 +263,9 @@ def loginSub():
 submitButton = Button(window, text="Submit", width = 10, height=3, bg="red", fg="black", command = loginSub)
 
 submitButton.grid(column=0, row=2)
-window.mainloop()
+while True:
+    window.update_idletasks()
+    window.update()
 driver.quit()
 
 
