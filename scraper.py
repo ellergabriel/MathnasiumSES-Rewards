@@ -1,6 +1,8 @@
 from urllib.request import urlopen
 import sqlite3
 from tkinter import *
+from tkinter import ttk
+from tkinter.ttk import Progressbar
 import datetime
 import multiprocessing
 import os
@@ -115,25 +117,24 @@ def recordStudent(students):
     
     global STUDENT_HREFS
     STUDENT_HREFS = {}
-    with open(PICKLE_FILE, 'rb+') as file:
-        try:
+    try:
+        with open(PICKLE_FILE, 'rb+') as file:
             lastTime = pickle.load(file)
             print("Last timestamp found")
             timeDiff = (startTime - lastTime).seconds / 3600 #converts time difference into hours
-            print(timeDiff)
+            print(str(timeDiff) + " hour time difference")
             studentCount = pickle.load(file)
             print("Student count found")
             if(timeDiff < timeout and len(students) == studentCount):
                 STUDENT_HREFS = pickle.load(file)
                 print("STUDENT_HREFS loaded: ")
-                print(STUDENT_HREFS)
                 file.close()
                 print("within 12 hours of last update, skipping database refresh...")
                 return
             print("over 12 hours since last database update, refreshing student information...")
-        except:
-            print("ERROR: Unsuccessful fetching of time stamp or student hrefs, proceeding with database refresh...")
-        file.close()
+    except:
+        print("ERROR: Unsuccessful fetching of time stamp or student hrefs, proceeding with database refresh...")
+        #file.close()
     print("parsing student information...")
     
     STUDENT_HREFS = {} #reset dictionary, previous unsuccessful unpickling sets variable as NoneType otherwise
@@ -150,8 +151,7 @@ def recordStudent(students):
         stuDB.commit()
         driver.close()
         driver.switch_to.window(driver.window_handles[0])
-        
-    print(STUDENT_HREFS)
+
     finishTime = datetime.datetime.now()
     with open(PICKLE_FILE, 'wb+') as file:
         pickle.dump(finishTime, file)
