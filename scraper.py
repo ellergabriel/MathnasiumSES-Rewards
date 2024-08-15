@@ -62,6 +62,7 @@ class Student():
         topY = window.winfo_y() + window.winfo_height()//2 - topMessage.winfo_height()//2
         topMessage.geometry(f"+{topX}+{topY}")
         topMessage.update()
+        topMessage.grab_set()
         
         href = STUDENT_HREFS[self.fName + " " + self.lName]
         driver.execute_script("window.open('%s', '_blank')" % href)
