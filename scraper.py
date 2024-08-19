@@ -21,10 +21,10 @@ from selenium.webdriver.common.action_chains import ActionChains
 #Selenium 
 loginUrl= "https://radius.mathnasium.com/Student"
 DRIVER_PATH = os.path.join(os.path.dirname(__file__), 'Drivers\chromedriver.exe') #File path for deliverable
-#DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') """ File path for local testing"""
+#DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #File path for local testing
 service = Service(executable_path=DRIVER_PATH)
 options = webdriver.ChromeOptions()
-options.add_argument("--headless=new")
+#options.add_argument("--headless=new")
 options.add_argument("--blink-settings=imageEnabled=false")
 driver = webdriver.Chrome(service=service, options=options)
 action = ActionChains(driver)
@@ -44,7 +44,7 @@ class Student():
         self.lName = lName
         self.cards = cards
         self.href = href
-        studentInfo = f'{fName} {lName}: {cards}'
+        studentInfo = f'{fName} {lName}: {cards} cards'
         self.lbl = Label(studentFrame, text = studentInfo, width = 30, font = ('Arial', 16, 'bold'))
         self.btn = Button(studentFrame, text = "REFRESH", width = 10, command = self.refreshCards)
         if not isPrime:
@@ -196,6 +196,8 @@ def parseStudents():
     studentReg = "//a[starts-with(@href, '/Student/Details')]"
     global studentList
     studentList = driver.find_elements(By.XPATH, studentReg)
+    if(len(studentList) > 0):
+        print("Student list generated...")
     pruneStudents(studentList)#clear student list of duplicates
     recordStudent(studentList)
     
