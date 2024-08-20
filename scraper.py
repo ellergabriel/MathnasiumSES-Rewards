@@ -165,12 +165,16 @@ def recordStudent(students):
     print("parsing student information...")
     
     STUDENT_HREFS = {} #reset dictionary, previous unsuccessful unpickling sets variable as NoneType otherwise
+    wait = WebDriverWait(driver, 20)
     for stu in students:
         stuHref = stu.get_attribute('href')
         driver.execute_script("window.open('%s', '_blank')" % stuHref)
         driver.switch_to.window(driver.window_handles[-1])
         [fHolder, lHolder] = splitStudentName(driver.title)
         STUDENT_HREFS[driver.title] = stuHref
+
+        wait.until(EC.presence_of_element_located((By.ID, 'cardsAvailableDetail')))
+
         cards = (int)(driver.find_element(By.ID, 'cardsAvailableDetail').text)
         print(driver.title + " " + str(cards))
         stuCur.execute("INSERT OR IGNORE INTO Students(fName, lName, cards) values(?,?,?)",(fHolder, lHolder, cards))
@@ -246,7 +250,9 @@ def createStudentDisplay():
         try:
             stuHref = STUDENT_HREFS[str(fName) + " " + str(lName)]
         except KeyError:
-            print("ERROR: student info not stored in HREFs. Check student records for " + str(fName) + " " + str(lName))
+            print("ERROR: student info not stored in HREFs. Check student records for " + str(fName) + " " + str(lName) + ". Removing student from db...")
+            stuCur.execute("DELETE FROM Students WHERE fName = ? AND lName = ?", (str(fName), str(lName)))
+            stuDB.commit()
             continue
         stuEntry = Student(fName, lName, cards, stuHref, studentFrame, primeRow, rowLCV)
         primeRow = not primeRow
