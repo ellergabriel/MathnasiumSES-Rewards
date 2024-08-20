@@ -20,16 +20,16 @@ from selenium.webdriver.common.action_chains import ActionChains
 
 #Selenium 
 loginUrl= "https://radius.mathnasium.com/Student"
-DRIVER_PATH = os.path.join(os.path.dirname(__file__), 'Drivers\chromedriver.exe') #File path for deliverable
-#DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #File path for local testing
+#DRIVER_PATH = os.path.join(os.path.dirname(__file__), 'Drivers\chromedriver.exe') #File path for deliverable
+DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #File path for local testing
 service = Service(executable_path=DRIVER_PATH)
 options = webdriver.ChromeOptions()
-#options.add_argument("--headless=new")
+options.add_argument("--headless=new")
 options.add_argument("--blink-settings=imageEnabled=false")
 driver = webdriver.Chrome(service=service, options=options)
 action = ActionChains(driver)
 
-#Global variable to for all Selenium driver instances
+#Global variable for all Selenium driver instances
 """Pickle file must go in order as follows:
 1. datetime object - last timestamp that the student list was parsed
 2. integer - number of enrolled students
@@ -220,7 +220,7 @@ def createStudentDisplay():
 
     #Main Frame to hold list of students
     outerFrame = Frame(window, bd = 5, relief = "flat")
-    outerFrame.grid(row = 0, column = 0, sticky = "NW")
+    outerFrame.grid(row = 0, column = 0, sticky = "NSEW")
 
     #Canvas which manages the grid of students
     frameCanvas = Canvas(outerFrame, height = WINDOW_HEIGHT - 100, width = WINDOW_WIDTH - 300, bd = 5)
@@ -243,7 +243,11 @@ def createStudentDisplay():
     for row in stuCur.execute("SELECT * FROM Students ORDER BY fName ASC"):
         fName, lName, cards = row
         studentInfo = f'{fName} {lName}:  {cards}'
-        stuHref = STUDENT_HREFS[str(fName) + " " + str(lName)]
+        try:
+            stuHref = STUDENT_HREFS[str(fName) + " " + str(lName)]
+        except KeyError:
+            print("ERROR: student info not stored in HREFs. Check student records for " + str(fName) + " " + str(lName))
+            continue
         stuEntry = Student(fName, lName, cards, stuHref, studentFrame, primeRow, rowLCV)
         primeRow = not primeRow
         studentEntries.append(stuEntry)
