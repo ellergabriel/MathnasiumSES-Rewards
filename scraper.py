@@ -20,8 +20,8 @@ from selenium.webdriver.common.action_chains import ActionChains
 
 #Selenium 
 loginUrl= "https://radius.mathnasium.com/Student"
-#DRIVER_PATH = os.path.join(os.path.dirname(__file__), 'Drivers\chromedriver.exe') #File path for deliverable
-DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #File path for local testing
+DRIVER_PATH = os.path.join(os.path.dirname(__file__), 'Drivers\chromedriver.exe') #File path for deliverable
+#DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #File path for local testing
 
 service = Service(executable_path=DRIVER_PATH)
 options = webdriver.ChromeOptions()
@@ -99,6 +99,8 @@ stuCur.execute(stuTable)
 window = Tk()
 window.title("Digital Rewards Tracker")
 window.geometry('350x200')
+#window.iconbitmap("A+.ico")
+window.iconbitmap(os.path.join(os.path.dirname(__file__), 'A+.ico'))
 WINDOW_HEIGHT = 800
 WINDOW_WIDTH = 600
 
