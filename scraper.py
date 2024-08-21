@@ -22,12 +22,15 @@ from selenium.webdriver.common.action_chains import ActionChains
 loginUrl= "https://radius.mathnasium.com/Student"
 #DRIVER_PATH = os.path.join(os.path.dirname(__file__), 'Drivers\chromedriver.exe') #File path for deliverable
 DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #File path for local testing
+
 service = Service(executable_path=DRIVER_PATH)
 options = webdriver.ChromeOptions()
 options.add_argument("--headless=new")
 options.add_argument("--blink-settings=imageEnabled=false")
 driver = webdriver.Chrome(service=service, options=options)
 action = ActionChains(driver)
+
+
 
 #Global variable for all Selenium driver instances
 """Pickle file must go in order as follows:
@@ -159,7 +162,11 @@ def recordStudent(students):
                 file.close()
                 print("within 12 hours of last update, skipping database refresh...")
                 return
-            print("over 12 hours since last database update, refreshing student information...")
+            if(timeDiff > timeout):
+                print("Over 12 hours since last refresh")
+            if(len(students) != studentCount):
+                print("student count has changed since last run")
+            print("Refreshing student information...")
     except:
         print("ERROR: Unsuccessful fetching of time stamp or student hrefs, proceeding with database refresh...")
     print("parsing student information...")
@@ -220,15 +227,20 @@ def generateStudents():
 
 #Function changes tkinter window to UX that students can interact with 
 def createStudentDisplay():
+    
     window.grid_rowconfigure(0, weight = 1)
-
+    def testFunc(self):
+        outerFrame.config(height = window.winfo_height(), width = window.winfo_width())
+        frameCanvas.config(height = window.winfo_height())
+        print("Changing Frame and Canvas Size")
     #Main Frame to hold list of students
-    outerFrame = Frame(window, bd = 5, relief = "flat")
+    outerFrame = Frame(window, bd = 5, relief = "flat", bg = "red")
     outerFrame.grid(row = 0, column = 0, sticky = "NSEW")
+    outerFrame.bind("<Configure>", testFunc)
 
     #Canvas which manages the grid of students
     frameCanvas = Canvas(outerFrame, height = WINDOW_HEIGHT - 100, width = WINDOW_WIDTH - 300, bd = 5)
-    frameCanvas.grid(row = 0, column = 0)
+    frameCanvas.grid(row = 0, column = 0, sticky = "NSEW")
 
     vsb = Scrollbar(outerFrame, orient = "vertical", command = frameCanvas.yview, width = 80)
     vsb.grid(row = 0, column = 1, sticky = 'NS')
@@ -261,6 +273,7 @@ def createStudentDisplay():
     frameCanvas.update_idletasks()
     frameCanvas.create_window((0,0), window = studentFrame, anchor = 'nw')
     frameCanvas.config(scrollregion=frameCanvas.bbox("all"))
+
     
     
 #Function accesses 'Student Management' page, handles login on intial boot 
