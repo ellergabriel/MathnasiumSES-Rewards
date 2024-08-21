@@ -100,7 +100,7 @@ window = Tk()
 window.title("Digital Rewards Tracker")
 window.geometry('350x200')
 WINDOW_HEIGHT = 800
-WINDOW_WIDTH = 800
+WINDOW_WIDTH = 600
 
 uNameLbl = Label(window, text="Username")
 uNameLbl.grid(column = 0, row = 0)
@@ -158,7 +158,7 @@ def recordStudent(students):
             print("Student count found")
             if(timeDiff < timeout and len(students) == studentCount):
                 STUDENT_HREFS = pickle.load(file)
-                print("STUDENT_HREFS loaded: ")
+                print("STUDENT_HREFS loaded")
                 file.close()
                 print("within 12 hours of last update, skipping database refresh...")
                 return
@@ -229,27 +229,25 @@ def generateStudents():
 def createStudentDisplay():
     
     window.grid_rowconfigure(0, weight = 1)
-    def testFunc(self):
-        outerFrame.config(height = window.winfo_height(), width = window.winfo_width())
-        frameCanvas.config(height = window.winfo_height())
-        print("Changing Frame and Canvas Size")
+    def entryResize(self):
+        outerFrame.config(height = window.winfo_height() - 25, width = window.winfo_width())
+        frameCanvas.config(height = window.winfo_height() - 25)
     #Main Frame to hold list of students
-    outerFrame = Frame(window, bd = 5, relief = "flat", bg = "red")
+    outerFrame = Frame(window, bd = 5, relief = "flat")
     outerFrame.grid(row = 0, column = 0, sticky = "NSEW")
-    outerFrame.bind("<Configure>", testFunc)
+    outerFrame.bind("<Configure>", entryResize)
 
     #Canvas which manages the grid of students
-    frameCanvas = Canvas(outerFrame, height = WINDOW_HEIGHT - 100, width = WINDOW_WIDTH - 300, bd = 5)
+    frameCanvas = Canvas(outerFrame, height = WINDOW_HEIGHT - 100, width = WINDOW_WIDTH - 100, bd = 5)
     frameCanvas.grid(row = 0, column = 0, sticky = "NSEW")
 
     vsb = Scrollbar(outerFrame, orient = "vertical", command = frameCanvas.yview, width = 80)
     vsb.grid(row = 0, column = 1, sticky = 'NS')
     frameCanvas.configure(yscrollcommand = vsb.set)
 
-    #Blue Inner Frame
+    #Inner Frame that holds Student object widgets
     studentFrame = Frame(frameCanvas)
     records = stuCur.execute("SELECT * FROM Students ORDER BY fName ASC")
-    print(len(records.fetchall()))
     studentFrame.rowconfigure(len(records.fetchall()))
 
     global studentEntries
