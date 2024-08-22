@@ -20,8 +20,8 @@ from selenium.webdriver.common.action_chains import ActionChains
 
 #Selenium 
 loginUrl= "https://radius.mathnasium.com/Student"
-DRIVER_PATH = os.path.join(os.path.dirname(__file__), 'Drivers\chromedriver.exe') #File path for deliverable
-#DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #File path for local testing
+#DRIVER_PATH = os.path.join(os.path.dirname(__file__), 'Drivers\chromedriver.exe') #File path for deliverable
+DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #File path for local testing
 
 service = Service(executable_path=DRIVER_PATH)
 options = webdriver.ChromeOptions()
@@ -99,8 +99,10 @@ stuCur.execute(stuTable)
 window = Tk()
 window.title("Digital Rewards Tracker")
 window.geometry('350x200')
-#window.iconbitmap("A+.ico")
-window.iconbitmap(os.path.join(os.path.dirname(__file__), 'A+.ico'))
+
+window.iconbitmap("A+.ico") #Local testing 
+#window.iconbitmap(os.path.join(os.path.dirname(__file__), 'A+.ico')) #deliverable
+
 WINDOW_HEIGHT = 800
 WINDOW_WIDTH = 600
 
@@ -141,6 +143,8 @@ def pruneStudents(studentList):
         else:
             studentList.pop(lcv)
 
+
+
 #Function takes in list of Student profiles from Radius and opens each in a new tab, recording full name and card count
 #Function uses pickling to determine last time the full student list was parsed as well as if students were dropped/added
 def recordStudent(students):
@@ -174,15 +178,12 @@ def recordStudent(students):
     print("parsing student information...")
     
     STUDENT_HREFS = {} #reset dictionary, previous unsuccessful unpickling sets variable as NoneType otherwise
-    wait = WebDriverWait(driver, 20)
     for stu in students:
         stuHref = stu.get_attribute('href')
         driver.execute_script("window.open('%s', '_blank')" % stuHref)
         driver.switch_to.window(driver.window_handles[-1])
         [fHolder, lHolder] = splitStudentName(driver.title)
         STUDENT_HREFS[driver.title] = stuHref
-
-        wait.until(EC.presence_of_element_located((By.ID, 'cardsAvailableDetail')))
 
         cards = (int)(driver.find_element(By.ID, 'cardsAvailableDetail').text)
         print(driver.title + " " + str(cards))
@@ -231,9 +232,10 @@ def generateStudents():
 def createStudentDisplay():
     
     window.grid_rowconfigure(0, weight = 1)
-    def entryResize(self):
+    def entryResize(self): #nested function handles dynamic resizing of student list 
         outerFrame.config(height = window.winfo_height() - 25, width = window.winfo_width())
         frameCanvas.config(height = window.winfo_height() - 25)
+        
     #Main Frame to hold list of students
     outerFrame = Frame(window, bd = 5, relief = "flat")
     outerFrame.grid(row = 0, column = 0, sticky = "NSEW")
@@ -243,6 +245,7 @@ def createStudentDisplay():
     frameCanvas = Canvas(outerFrame, height = WINDOW_HEIGHT - 100, width = WINDOW_WIDTH - 100, bd = 5)
     frameCanvas.grid(row = 0, column = 0, sticky = "NSEW")
 
+    #Scrollbar
     vsb = Scrollbar(outerFrame, orient = "vertical", command = frameCanvas.yview, width = 80)
     vsb.grid(row = 0, column = 1, sticky = 'NS')
     frameCanvas.configure(yscrollcommand = vsb.set)
