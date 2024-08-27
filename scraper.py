@@ -300,13 +300,34 @@ def loginSub():
         createStudentDisplay()
     else:
         errorLbl.grid(column = 1, row = 2)
-    #browser.launch_browser()
     
-    
+def customExit():
+    print("callback function working")
+    exitConfirm = Toplevel()
+    exitConfirm.title("Exit application?")
+    exitConfirm.geometry("300x100")
+    exitLabel = Label(exitConfirm, text = "Enter pin:")
+    exitLabel.grid(column = 0, row = 0)
+    pinEntry = Entry(exitConfirm, show = "*")
+    pinEntry.grid(column = 1, row = 0)
+    def checkPIN():
+        if(pinEntry.get() == PIN):
+            window.destroy()
+            driver.quit()
+            sys.exit()
+        else:
+            exitConfirm.destroy()
+            return
+    exitSubmit = Button(exitConfirm, text = "Submit", bg="red", fg="black", command = checkPIN)
+    exitSubmit.grid(column = 0, row = 1)
+    exitConfirm.update()
 
+    
 submitButton = Button(window, text="Submit", width = 10, height=3, bg="red", fg="black", command = loginSub)
-
+PIN = "1835"
 submitButton.grid(column=0, row=2)
+window.protocol("WM_DELETE_WINDOW", customExit)
+
 while True:
     window.update_idletasks()
     window.update()
