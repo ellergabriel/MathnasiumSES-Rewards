@@ -1,6 +1,7 @@
 from urllib.request import urlopen
 import sqlite3
 from tkinter import *
+import queue
 import datetime
 import time
 import multiprocessing
@@ -257,6 +258,7 @@ def createStudentDisplay():
 
     global studentEntries
     studentEntries = []
+    toBeRemoved = queue.Queue()
     rowLCV = 1
     primeRow = True
     for row in stuCur.execute("SELECT * FROM Students ORDER BY fName ASC"):
@@ -266,13 +268,19 @@ def createStudentDisplay():
             stuHref = STUDENT_HREFS[str(fName) + " " + str(lName)]
         except KeyError:
             print("ERROR: student info not stored in HREFs. Check student records for " + str(fName) + " " + str(lName) + ". Removing student from db...")
-            stuCur.execute("DELETE FROM Students WHERE fName = ? AND lName = ?", (str(fName), str(lName)))
-            stuDB.commit()
+            toBeRemoved.append( (str(fName), str(lName) ))
             continue
+            #stuCur.execute("DELETE FROM Students WHERE fName = ? AND lName = ?", (str(fName), str(lName)))
+            #stuDB.commit()
         stuEntry = Student(fName, lName, cards, stuHref, studentFrame, primeRow, rowLCV)
         primeRow = not primeRow
         studentEntries.append(stuEntry)
         rowLCV += 1
+    if not toBeRemoved.empty():
+        for stu in toBeRemoved:
+            fName , lName = stu
+            stuCur.execute("DELETE FROM Students WHERE fName = ? AND lName = ?", (str(fName), str(lName)))
+            stuDB.commit()
     frameCanvas.update_idletasks()
     frameCanvas.create_window((0,0), window = studentFrame, anchor = 'nw')
     frameCanvas.config(scrollregion=frameCanvas.bbox("all"))
