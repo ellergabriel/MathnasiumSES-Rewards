@@ -270,8 +270,6 @@ def createStudentDisplay():
             print("ERROR: student info not stored in HREFs. Check student records for " + str(fName) + " " + str(lName) + ". Removing student from db...")
             toBeRemoved.put( (str(fName), str(lName) ))
             continue
-            #stuCur.execute("DELETE FROM Students WHERE fName = ? AND lName = ?", (str(fName), str(lName)))
-            #stuDB.commit()
         stuEntry = Student(fName, lName, cards, stuHref, studentFrame, primeRow, rowLCV)
         primeRow = not primeRow
         studentEntries.append(stuEntry)
@@ -311,12 +309,16 @@ def loginSub():
 #Function overrides [x] in window toolbar, prevents students from closing window without entering the pin
 def customExit():
     exitConfirm = Toplevel()
-    exitConfirm.title("Exit application?")
-    exitConfirm.geometry("300x100")
+    exitConfirm.title("DO NOT TOUCH")
+    exitConfirm.geometry("300x300")
+    warningLabel = Label(exitConfirm, text = "DO NOT TOUCH THE RED X", font = ('Impact', 50, 'bold'), wraplength = 300, justify = "center")
+    warningLabel.grid()
+    """
     exitLabel = Label(exitConfirm, text = "Enter pin:")
     exitLabel.grid(column = 0, row = 0)
     pinEntry = Entry(exitConfirm, show = "*")
     pinEntry.grid(column = 1, row = 0)
+    warningLabel = Label(exitConfirm, text = "DO NOT TOUCH THE RED X")
     def checkPIN():
         if(pinEntry.get() == PIN):
             window.destroy()
@@ -327,6 +329,7 @@ def customExit():
             return
     exitSubmit = Button(exitConfirm, text = "Submit", bg="red", fg="black", command = checkPIN)
     exitSubmit.grid(column = 0, row = 1)
+    """
     exitConfirm.update()
 
     
