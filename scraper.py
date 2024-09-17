@@ -18,16 +18,14 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 #Selenium 
 loginUrl= "https://radius.mathnasium.com/Student"
-DRIVER_PATH = os.path.join(os.path.dirname(__file__), 'Drivers\chromedriver.exe') #File path for deliverable
-#DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #File path for local testing
+#DRIVER_PATH = os.path.join(os.path.dirname(__file__), 'Drivers\chromedriver.exe') #File path for deliverable
+DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #File path for local testing
 
 service = Service(executable_path=DRIVER_PATH)
 options = webdriver.ChromeOptions()
 options.add_argument("--headless=new")
 options.add_argument("--blink-settings=imageEnabled=false")
 driver = webdriver.Chrome(service=service, options=options)
-action = ActionChains(driver)
-
 
 
 #Global variable for all Selenium driver instances
@@ -38,6 +36,8 @@ action = ActionChains(driver)
 """
 PICKLE_FILE = 'timestamp.pkl'
 
+
+#Class maintains each Student entry on the main display
 class Student():
 
     def __init__(self, fName, lName, cards, href, studentFrame, isPrime, rowLCV):
@@ -98,8 +98,8 @@ window = Tk()
 window.title("Digital Rewards Tracker")
 window.geometry('350x200')
 
-#window.iconbitmap("A+.ico") #Local testing 
-window.iconbitmap(os.path.join(os.path.dirname(__file__), 'A+.ico')) #deliverable
+window.iconbitmap("A+.ico") #Local testing 
+#window.iconbitmap(os.path.join(os.path.dirname(__file__), 'A+.ico')) #deliverable
 
 WINDOW_HEIGHT = 800
 WINDOW_WIDTH = 600
@@ -310,28 +310,10 @@ def customExit():
     exitConfirm.geometry("300x300")
     warningLabel = Label(exitConfirm, text = "DO NOT TOUCH THE RED X", font = ('Impact', 50, 'bold'), wraplength = 300, justify = "center")
     warningLabel.grid()
-    """
-    exitLabel = Label(exitConfirm, text = "Enter pin:")
-    exitLabel.grid(column = 0, row = 0)
-    pinEntry = Entry(exitConfirm, show = "*")
-    pinEntry.grid(column = 1, row = 0)
-    warningLabel = Label(exitConfirm, text = "DO NOT TOUCH THE RED X")
-    def checkPIN():
-        if(pinEntry.get() == PIN):
-            window.destroy()
-            driver.quit()
-            sys.exit()
-        else:
-            exitConfirm.destroy()
-            return
-    exitSubmit = Button(exitConfirm, text = "Submit", bg="red", fg="black", command = checkPIN)
-    exitSubmit.grid(column = 0, row = 1)
-    """
     exitConfirm.update()
 
     
 submitButton = Button(window, text="Submit", width = 10, height=3, bg="red", fg="black", command = loginSub)
-PIN = "1835"
 submitButton.grid(column=0, row=2)
 window.protocol("WM_DELETE_WINDOW", customExit)
 
