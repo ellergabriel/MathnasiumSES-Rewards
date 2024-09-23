@@ -16,6 +16,8 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 
+
+
 #Selenium 
 loginUrl= "https://radius.mathnasium.com/Student"
 #DRIVER_PATH = os.path.join(os.path.dirname(__file__), 'Drivers\chromedriver.exe') #File path for deliverable
@@ -25,7 +27,7 @@ service = Service(executable_path=DRIVER_PATH)
 options = webdriver.ChromeOptions()
 options.add_argument("--headless=new")
 options.add_argument("--blink-settings=imageEnabled=false")
-driver = webdriver.Chrome(service=service, options=options)
+main_driver = webdriver.Chrome(service=service, options=options)
 
 
 #Global variable for all Selenium driver instances
@@ -72,13 +74,13 @@ class Student():
         topMessage.grab_set()
         
         href = STUDENT_HREFS[self.fName + " " + self.lName]
-        driver.execute_script("window.open('%s', '_blank')" % href)
-        driver.switch_to.window(driver.window_handles[-1])
-        self.cards = (int)(driver.find_element(By.ID, 'cardsAvailableDetail').text)
+        main_driver.execute_script("window.open('%s', '_blank')" % href)
+        main_driver.switch_to.window(main_driver.window_handles[-1])
+        self.cards = (int)(main_driver.find_element(By.ID, 'cardsAvailableDetail').text)
         stuCur.execute("UPDATE Students SET cards = ? WHERE fName = ? AND lName = ?", (self.cards, self.fName, self.lName))
         stuDB.commit()
-        driver.close()
-        driver.switch_to.window(driver.window_handles[0])
+        main_driver.close()
+        main_driver.switch_to.window(main_driver.window_handles[0])
         studentInfo = f'{self.fName} {self.lName}: {self.cards} cards'
         self.lbl.config(text = studentInfo)
 
@@ -86,6 +88,18 @@ class Student():
         topMessage.destroy()
         refreshButtonAbility(True) #reenables refresh buttons 
         
+class Subdriver():
+    def __init__(self):
+        #Selenium 
+        loginUrl= "https://radius.mathnasium.com/Student"
+        #DRIVER_PATH = os.path.join(os.path.dirname(__file__), 'Drivers\chromedriver.exe') #File path for deliverable
+        DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #File path for local testing
+
+        service = Service(executable_path=DRIVER_PATH)
+        options = webdriver.ChromeOptions()
+        options.add_argument("--headless=new")
+        options.add_argument("--blink-settings=imageEnabled=false")
+        driver = webdriver.Chrome(service=service, options=options)
 
 #SQLite 
 stuDB = sqlite3.connect("Students.db")
@@ -114,6 +128,10 @@ passLbl.grid(column = 0, row = 1)
 password = Entry(window, show = "*", width = 30)
 password.grid(column = 1, row = 1)
 
+
+"""
+Helper functions; does not interact with Selenium drivers
+"""
 #Helper function that disables or enables all refresh buttons on main student UX
 def refreshButtonAbility(isEnabled):
     for stu in studentEntries:
@@ -142,11 +160,13 @@ def pruneStudents(studentList):
             studentList.pop(lcv)
 
 
-
+"""
+Essential functions: interacts with Selenium drivers
+"""
 #Function takes in list of Student profiles from Radius and opens each in a new tab, recording full name and card count
 #Function uses pickling to determine last time the full student list was parsed as well as if students were dropped/added
 def recordStudent(students):
-    driver.implicitly_wait(0)
+    main_driver.implicitly_wait(0)
     startTime = datetime.datetime.now()
     timeout = 12 #hours
     
@@ -178,18 +198,18 @@ def recordStudent(students):
     STUDENT_HREFS = {} #reset dictionary, previous unsuccessful unpickling sets variable as NoneType otherwise
     for stu in students:
         stuHref = stu.get_attribute('href')
-        driver.execute_script("window.open('%s', '_blank')" % stuHref)
-        driver.switch_to.window(driver.window_handles[-1])
-        [fHolder, lHolder] = splitStudentName(driver.title)
-        STUDENT_HREFS[driver.title] = stuHref
+        main_driver.execute_script("window.open('%s', '_blank')" % stuHref)
+        main_driver.switch_to.window(main_driver.window_handles[-1])
+        [fHolder, lHolder] = splitStudentName(main_driver.title)
+        STUDENT_HREFS[main_driver.title] = stuHref
 
-        cards = (int)(driver.find_element(By.ID, 'cardsAvailableDetail').text)
-        print(driver.title + " " + str(cards))
+        cards = (int)(main_driver.find_element(By.ID, 'cardsAvailableDetail').text)
+        print(main_driver.title + " " + str(cards))
         stuCur.execute("INSERT OR IGNORE INTO Students(fName, lName, cards) values(?,?,?)",(fHolder, lHolder, cards))
         stuCur.execute("UPDATE Students SET cards = ? WHERE fName = ? AND lName = ?", (cards, fHolder, lHolder))
         stuDB.commit()
-        driver.close()
-        driver.switch_to.window(driver.window_handles[0])
+        main_driver.close()
+        main_driver.switch_to.window(main_driver.window_handles[0])
 
     finishTime = datetime.datetime.now()
     with open(PICKLE_FILE, 'wb+') as file:
@@ -201,29 +221,27 @@ def recordStudent(students):
         print("STUDENT_HREFS have been pickled")
         file.close()
     
-
 #Function handles capturing student information for database entry/updates
 def parseStudents():
-    driver.implicitly_wait(5)
+    main_driver.implicitly_wait(5)
     studentReg = "//a[starts-with(@href, '/Student/Details')]"
     global studentList
-    studentList = driver.find_elements(By.XPATH, studentReg)
+    studentList = main_driver.find_elements(By.XPATH, studentReg)
     if(len(studentList) > 0):
         print("Student list generated...")
     pruneStudents(studentList)#clear student list of duplicates
     recordStudent(studentList)
     
-
 #Function interacts with Student Management page, TODO: update to dynamically select enrollment filter
 def generateStudents():
     print("Login successful")
-    enrollFilterPath = "//div[@class='container']//div[@id='single-Grid-Page']/div[2]/div[1]/div[1]/div[3]/div[1]/span[1]"
-    enFill = driver.find_element(By.XPATH, enrollFilterPath)
+    enrollFilterPath = "//div[@class='container']//div[@id='single-Grid-Page']/div[2]/div[1]/div[1]/div[3]/div[1]/span[1]" #ugly, make sure to fix
+    enFill = main_driver.find_element(By.XPATH, enrollFilterPath)
     enFill.click()
     for i in range(3): #manually scrolls through Enrollment Filters, should be fixed to dynamically find "enrolled"
         enFill.send_keys(Keys.DOWN)
     enFill.send_keys(Keys.ENTER)
-    driver.find_element(By.ID, 'btnsearch').click()
+    main_driver.find_element(By.ID, 'btnsearch').click()
     parseStudents()
 
 #Function changes tkinter window to UX that students can interact with 
@@ -286,11 +304,11 @@ def loginSub():
     errorLbl = Label(window, text = "ERROR: Unable to login")
     uName = userName.get()
     pWord = password.get() 
-    driver.get(loginUrl)
-    driver.find_element(By.ID, "UserName").send_keys(uName)
-    driver.find_element(By.ID, "Password").send_keys(pWord)
-    driver.find_element(By.ID, "login").click()
-    if not("Login" in driver.current_url):
+    main_driver.get(loginUrl)
+    main_driver.find_element(By.ID, "UserName").send_keys(uName)
+    main_driver.find_element(By.ID, "Password").send_keys(pWord)
+    main_driver.find_element(By.ID, "login").click()
+    if not("Login" in main_driver.current_url):
         errorLbl.destroy()
         generateStudents()
         submitButton.destroy()
@@ -320,6 +338,6 @@ window.protocol("WM_DELETE_WINDOW", customExit)
 while True:
     window.update_idletasks()
     window.update()
-driver.quit()
+main_driver.quit()
 
 
