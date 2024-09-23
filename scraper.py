@@ -7,7 +7,7 @@ import time
 import os
 import sys
 import pickle
-import threading
+import multiprocessing
 import chromedriver_binary
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -89,17 +89,19 @@ class Student():
         refreshButtonAbility(True) #reenables refresh buttons 
         
 class Subdriver():
-    def __init__(self):
-        #Selenium 
-        loginUrl= "https://radius.mathnasium.com/Student"
+    def __init__(self, studentList, uname, password):
         #DRIVER_PATH = os.path.join(os.path.dirname(__file__), 'Drivers\chromedriver.exe') #File path for deliverable
         DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #File path for local testing
 
         service = Service(executable_path=DRIVER_PATH)
         options = webdriver.ChromeOptions()
-        options.add_argument("--headless=new")
+        #options.add_argument("--headless=new")
         options.add_argument("--blink-settings=imageEnabled=false")
-        driver = webdriver.Chrome(service=service, options=options)
+        self.driver = webdriver.Chrome(service=service, options=options)
+        self.driver.get("https://radius.mathnasium.com/Student")
+
+    def close(self):
+        self.driver.quit()
 
 #SQLite 
 stuDB = sqlite3.connect("Students.db")
@@ -161,7 +163,7 @@ def pruneStudents(studentList):
 
 
 """
-Essential functions: interacts with Selenium drivers
+Essential functions; interacts with Selenium drivers
 """
 #Function takes in list of Student profiles from Radius and opens each in a new tab, recording full name and card count
 #Function uses pickling to determine last time the full student list was parsed as well as if students were dropped/added
@@ -230,7 +232,7 @@ def parseStudents():
     if(len(studentList) > 0):
         print("Student list generated...")
     pruneStudents(studentList)#clear student list of duplicates
-    recordStudent(studentList)
+    #recordStudent(studentList)
     
 #Function interacts with Student Management page, TODO: update to dynamically select enrollment filter
 def generateStudents():
@@ -285,6 +287,9 @@ def createStudentDisplay():
             print("ERROR: student info not stored in HREFs. Check student records for " + str(fName) + " " + str(lName) + ". Removing student from db...")
             toBeRemoved.put( (str(fName), str(lName) ))
             continue
+        except NameError:
+            print("STUDENT_HREFS not defined, check debug lines")
+            return
         stuEntry = Student(fName, lName, cards, stuHref, studentFrame, primeRow, rowLCV)
         primeRow = not primeRow
         studentEntries.append(stuEntry)
@@ -333,7 +338,7 @@ def customExit():
     
 submitButton = Button(window, text="Submit", width = 10, height=3, bg="red", fg="black", command = loginSub)
 submitButton.grid(column=0, row=2)
-window.protocol("WM_DELETE_WINDOW", customExit)
+#window.protocol("WM_DELETE_WINDOW", customExit)
 
 while True:
     window.update_idletasks()
