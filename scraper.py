@@ -20,12 +20,14 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 #Selenium 
 loginUrl= "https://radius.mathnasium.com/Student"
-#DRIVER_PATH = os.path.join(os.path.dirname(__file__), 'Drivers\chromedriver.exe') #File path for deliverable
+"""Local testing"""
 DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #File path for local testing
+"""Deliverable"""
+#DRIVER_PATH = os.path.join(os.path.dirname(__file__), 'Drivers\chromedriver.exe') #File path for deliverable
 
 service = Service(executable_path=DRIVER_PATH)
 options = webdriver.ChromeOptions()
-options.add_argument("--headless=new")
+#options.add_argument("--headless=new")
 options.add_argument("--blink-settings=imageEnabled=false")
 main_driver = webdriver.Chrome(service=service, options=options)
 
@@ -90,15 +92,12 @@ class Student():
         
 class Subdriver():
     def __init__(self, studentList, uname, password):
-        #DRIVER_PATH = os.path.join(os.path.dirname(__file__), 'Drivers\chromedriver.exe') #File path for deliverable
-        DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #File path for local testing
-
         service = Service(executable_path=DRIVER_PATH)
         options = webdriver.ChromeOptions()
-        #options.add_argument("--headless=new")
+        options.add_argument("--headless=new")
         options.add_argument("--blink-settings=imageEnabled=false")
         self.driver = webdriver.Chrome(service=service, options=options)
-        self.driver.get("https://radius.mathnasium.com/Student")
+        #self.driver.get("https://radius.mathnasium.com/Student")
 
     def close(self):
         self.driver.quit()
@@ -114,8 +113,10 @@ window = Tk()
 window.title("Digital Rewards Tracker")
 window.geometry('350x200')
 
-window.iconbitmap("A+.ico") #Local testing 
-#window.iconbitmap(os.path.join(os.path.dirname(__file__), 'A+.ico')) #deliverable
+"""Local testing"""
+window.iconbitmap("A+.ico")
+"""deliverable"""
+#window.iconbitmap(os.path.join(os.path.dirname(__file__), 'A+.ico'))
 
 WINDOW_HEIGHT = 800
 WINDOW_WIDTH = 600
@@ -160,6 +161,9 @@ def pruneStudents(studentList):
             lcv += 1
         else:
             studentList.pop(lcv)
+
+
+
 
 
 """
@@ -223,6 +227,25 @@ def recordStudent(students):
         print("STUDENT_HREFS have been pickled")
         file.close()
     
+
+"""Prototype function for handling >1 page of enrolled students; will replace parseStudents() once complete"""
+def protoParse():
+    main_driver.implicitly_wait(5)
+    studentReg = "//a[starts-with(@href, '/Student/Details')]"
+    global studentList
+    studentList = []
+    pageButton = main_driver.find_element(By.CSS_SELECTOR, "[aria-label='Go to the next page']")
+    print( pageButton.get_attribute("class") ) 
+    studentList.append( main_driver.find_elements(By.XPATH, studentReg) )
+    print(studentList)
+
+
+"""Prototype function for creating student list with >1 page; will replace generateStudents() once complete"""
+def protoGen():
+    print("Login successful")
+    main_driver.find_element(By.ID, 'btnsearch').click()
+    protoParse()
+
 #Function handles capturing student information for database entry/updates
 def parseStudents():
     main_driver.implicitly_wait(5)
@@ -244,7 +267,7 @@ def generateStudents():
         enFill.send_keys(Keys.DOWN)
     enFill.send_keys(Keys.ENTER)
     main_driver.find_element(By.ID, 'btnsearch').click()
-    parseStudents()
+    #parseStudents()
 
 #Function changes tkinter window to UX that students can interact with 
 def createStudentDisplay():
@@ -301,9 +324,7 @@ def createStudentDisplay():
     frameCanvas.update_idletasks()
     frameCanvas.create_window((0,0), window = studentFrame, anchor = 'nw')
     frameCanvas.config(scrollregion=frameCanvas.bbox("all"))
-
-    
-    
+  
 #Function accesses 'Student Management' page, handles login on intial boot 
 def loginSub():
     errorLbl = Label(window, text = "ERROR: Unable to login")
@@ -315,7 +336,8 @@ def loginSub():
     main_driver.find_element(By.ID, "login").click()
     if not("Login" in main_driver.current_url):
         errorLbl.destroy()
-        generateStudents()
+        #generateStudents()
+        protoGen()
         submitButton.destroy()
         passLbl.destroy()
         uNameLbl.destroy()
@@ -335,7 +357,6 @@ def customExit():
     warningLabel.grid()
     exitConfirm.update()
 
-    
 submitButton = Button(window, text="Submit", width = 10, height=3, bg="red", fg="black", command = loginSub)
 submitButton.grid(column=0, row=2)
 #window.protocol("WM_DELETE_WINDOW", customExit)
