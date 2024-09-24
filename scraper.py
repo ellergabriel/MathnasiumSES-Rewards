@@ -15,6 +15,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 
 
@@ -91,16 +92,19 @@ class Student():
         refreshButtonAbility(True) #reenables refresh buttons 
         
 class Subdriver():
-    def __init__(self, studentList, uname, password):
+    def __init__(self):
         service = Service(executable_path=DRIVER_PATH)
         options = webdriver.ChromeOptions()
-        options.add_argument("--headless=new")
+        #options.add_argument("--headless=new")
         options.add_argument("--blink-settings=imageEnabled=false")
         self.driver = webdriver.Chrome(service=service, options=options)
         #self.driver.get("https://radius.mathnasium.com/Student")
 
     def close(self):
         self.driver.quit()
+
+    def get(self, URL):
+        self.driver.get(URL)
 
 #SQLite 
 stuDB = sqlite3.connect("Students.db")
@@ -234,10 +238,15 @@ def protoParse():
     studentReg = "//a[starts-with(@href, '/Student/Details')]"
     global studentList
     studentList = []
-    pageButton = main_driver.find_element(By.CSS_SELECTOR, "[aria-label='Go to the next page']")
-    print( pageButton.get_attribute("class") ) 
+    pageButton = main_driver.find_element(By.CSS_SELECTOR, "[title='Go to the next page']")
+    pageButton.click()
+    print(pageButton.get_attribute('innerHTML'))
+    #pageButton = wait.until(EC.element_to_be_clickable( (By.CSS_SELECTOR, "[aria-label='Go to the next page']")) )
+    #print( pageButton.get_attribute("class") )
+    #pageButton.click()
+    #pageBtnClass = pageButton.get_attribute("class") 
     studentList.append( main_driver.find_elements(By.XPATH, studentReg) )
-    print(studentList)
+    #print(studentList)
 
 
 """Prototype function for creating student list with >1 page; will replace generateStudents() once complete"""
