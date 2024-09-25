@@ -166,7 +166,17 @@ def pruneStudents(studentList):
         else:
             studentList.pop(lcv)
 
-
+#Helper function that highlights HTML element; useful for debugging and searching interactable elements
+def highlight(element):
+    """Highlights (blinks) a Selenium Webdriver element"""
+    driver = element._parent
+    def apply_style(s):
+        driver.execute_script("arguments[0].setAttribute('style', arguments[1]);",
+                              element, s)
+    original_style = element.get_attribute('style')
+    apply_style("background: yellow; border: 2px solid red;")
+    time.sleep(10)
+    apply_style(original_style)
 
 
 
@@ -232,28 +242,32 @@ def recordStudent(students):
         file.close()
     
 
+
 """Prototype function for handling >1 page of enrolled students; will replace parseStudents() once complete"""
 def protoParse():
     main_driver.implicitly_wait(5)
     studentReg = "//a[starts-with(@href, '/Student/Details')]"
     global studentList
     studentList = []
-    pageButton = main_driver.find_element(By.CSS_SELECTOR, "[title='Go to the next page']")
-    pageButton.click()
-    print(pageButton.get_attribute('innerHTML'))
+    pageButton = main_driver.find_element(By.CSS_SELECTOR, "[aria-label='Go to the next page']")
+    highlight(pageButton)
+    #pageButton.click()
+    #print(pageButton.get_attribute('innerHTML'))
+    #wait = WebDriverWait(main_driver, 10)
     #pageButton = wait.until(EC.element_to_be_clickable( (By.CSS_SELECTOR, "[aria-label='Go to the next page']")) )
     #print( pageButton.get_attribute("class") )
     #pageButton.click()
     #pageBtnClass = pageButton.get_attribute("class") 
     studentList.append( main_driver.find_elements(By.XPATH, studentReg) )
-    #print(studentList)
-
+    print(studentList)
 
 """Prototype function for creating student list with >1 page; will replace generateStudents() once complete"""
 def protoGen():
     print("Login successful")
     main_driver.find_element(By.ID, 'btnsearch').click()
     protoParse()
+
+
 
 #Function handles capturing student information for database entry/updates
 def parseStudents():
