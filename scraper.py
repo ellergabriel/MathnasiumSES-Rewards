@@ -16,6 +16,7 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
 
 
 
@@ -29,7 +30,11 @@ DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #Fil
 service = Service(executable_path=DRIVER_PATH)
 options = webdriver.ChromeOptions()
 #options.add_argument("--headless=new")
+#print(os.path.dirname(os.path.realpath(__file__)))
+downloadPath = os.path.dirname(os.path.realpath(sys.argv[0])) #downloads files to local executable
+prefs = {'download.default_directory' : downloadPath}
 options.add_argument("--blink-settings=imageEnabled=false")
+options.add_experimental_option('prefs', prefs)
 main_driver = webdriver.Chrome(service=service, options=options)
 
 
@@ -90,7 +95,8 @@ class Student():
         print("ending refresh for " + self.fName + " " + self.lName)
         topMessage.destroy()
         refreshButtonAbility(True) #reenables refresh buttons 
-        
+
+#Class for drivers used in multiprocessing   
 class Subdriver():
     def __init__(self):
         service = Service(executable_path=DRIVER_PATH)
@@ -243,23 +249,22 @@ def recordStudent(students):
     
 
 
-"""Prototype function for handling >1 page of enrolled students; will replace parseStudents() once complete"""
+"""Prototype function for handling >1 page of enrolled students; will replace parseStudents() once complete
+    Pseudocode- Fill enrollment filter
+                export to excel
+                open xslx file
+                parse student id numbers
+                when recording student vals, use string appending to radius.mathnasium.com/Student/Details/{idNumber}
+"""
 def protoParse():
-    main_driver.implicitly_wait(5)
+    main_driver.implicitly_wait(10)
     studentReg = "//a[starts-with(@href, '/Student/Details')]"
     global studentList
     studentList = []
     pageButton = main_driver.find_element(By.CSS_SELECTOR, "[aria-label='Go to the next page']")
-    highlight(pageButton)
-    #pageButton.click()
-    #print(pageButton.get_attribute('innerHTML'))
-    #wait = WebDriverWait(main_driver, 10)
-    #pageButton = wait.until(EC.element_to_be_clickable( (By.CSS_SELECTOR, "[aria-label='Go to the next page']")) )
-    #print( pageButton.get_attribute("class") )
-    #pageButton.click()
-    #pageBtnClass = pageButton.get_attribute("class") 
-    studentList.append( main_driver.find_elements(By.XPATH, studentReg) )
-    print(studentList)
+    studentExcel = main_driver.find_element(By.ID, "btnExport")
+    studentExcel.click()
+    
 
 """Prototype function for creating student list with >1 page; will replace generateStudents() once complete"""
 def protoGen():
