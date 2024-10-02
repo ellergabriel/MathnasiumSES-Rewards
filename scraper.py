@@ -10,6 +10,7 @@ import pickle
 import glob as glob
 import pandas as pd
 import multiprocessing
+import threading
 import chromedriver_binary
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -187,6 +188,15 @@ def highlight(element):
     apply_style(original_style)
 
 
+"""
+Prototype function that handles multiprocessing of different student records
+Each subprocess will take partial list of students and perform selenium actions to record student stars
+"""
+def recordingRoutine(students):
+    print("shazbot")
+
+def multiprocessTester(proc):
+    print("process is working on " + str(proc))
 
 """
 Essential functions; interacts with Selenium drivers
@@ -224,6 +234,12 @@ def recordStudent(students):
     print("parsing student information...")
     
     STUDENT_HREFS = {} #reset dictionary, previous unsuccessful unpickling sets variable as NoneType otherwise
+
+    """
+    BEGIN MULTIPROCESSING IMPLEMENTATION
+    """
+    
+
     for stu in students:
         #stu = stu.get_attribute('href')
         main_driver.execute_script("window.open('%s', '_blank')" % stu)
