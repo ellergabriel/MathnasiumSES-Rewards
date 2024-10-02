@@ -7,7 +7,9 @@ import time
 import os
 import sys
 import pickle
-import threading
+import glob as glob
+import pandas as pd
+import multiprocessing
 import chromedriver_binary
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -15,17 +17,27 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
+
+
 
 #Selenium 
 loginUrl= "https://radius.mathnasium.com/Student"
-#DRIVER_PATH = os.path.join(os.path.dirname(__file__), 'Drivers\chromedriver.exe') #File path for deliverable
+"""Local testing"""
 DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #File path for local testing
+"""Deliverable"""
+#DRIVER_PATH = os.path.join(os.path.dirname(__file__), 'Drivers\chromedriver.exe') #File path for deliverable
 
 service = Service(executable_path=DRIVER_PATH)
 options = webdriver.ChromeOptions()
-options.add_argument("--headless=new")
+#options.add_argument("--headless=new")
+#print(os.path.dirname(os.path.realpath(__file__)))
+downloadPath = os.path.dirname(os.path.realpath(sys.argv[0])) #downloads files to local executable
+prefs = {'download.default_directory' : downloadPath}
 options.add_argument("--blink-settings=imageEnabled=false")
-driver = webdriver.Chrome(service=service, options=options)
+options.add_experimental_option('prefs', prefs)
+main_driver = webdriver.Chrome(service=service, options=options)
 
 
 #Global variable for all Selenium driver instances
@@ -72,20 +84,35 @@ class Student():
         topMessage.grab_set()
         
         href = STUDENT_HREFS[self.fName + " " + self.lName]
-        driver.execute_script("window.open('%s', '_blank')" % href)
-        driver.switch_to.window(driver.window_handles[-1])
-        self.cards = (int)(driver.find_element(By.ID, 'cardsAvailableDetail').text)
+        main_driver.execute_script("window.open('%s', '_blank')" % href)
+        main_driver.switch_to.window(main_driver.window_handles[-1])
+        self.cards = (int)(main_driver.find_element(By.ID, 'cardsAvailableDetail').text)
         stuCur.execute("UPDATE Students SET cards = ? WHERE fName = ? AND lName = ?", (self.cards, self.fName, self.lName))
         stuDB.commit()
-        driver.close()
-        driver.switch_to.window(driver.window_handles[0])
+        main_driver.close()
+        main_driver.switch_to.window(main_driver.window_handles[0])
         studentInfo = f'{self.fName} {self.lName}: {self.cards} cards'
         self.lbl.config(text = studentInfo)
 
         print("ending refresh for " + self.fName + " " + self.lName)
         topMessage.destroy()
         refreshButtonAbility(True) #reenables refresh buttons 
-        
+
+#Class for drivers used in multiprocessing   
+class Subdriver():
+    def __init__(self):
+        service = Service(executable_path=DRIVER_PATH)
+        options = webdriver.ChromeOptions()
+        #options.add_argument("--headless=new")
+        options.add_argument("--blink-settings=imageEnabled=false")
+        self.driver = webdriver.Chrome(service=service, options=options)
+        #self.driver.get("https://radius.mathnasium.com/Student")
+
+    def close(self):
+        self.driver.quit()
+
+    def get(self, URL):
+        self.driver.get(URL)
 
 #SQLite 
 stuDB = sqlite3.connect("Students.db")
@@ -98,8 +125,10 @@ window = Tk()
 window.title("Digital Rewards Tracker")
 window.geometry('350x200')
 
-window.iconbitmap("A+.ico") #Local testing 
-#window.iconbitmap(os.path.join(os.path.dirname(__file__), 'A+.ico')) #deliverable
+"""Local testing"""
+window.iconbitmap("A+.ico")
+"""deliverable"""
+#window.iconbitmap(os.path.join(os.path.dirname(__file__), 'A+.ico'))
 
 WINDOW_HEIGHT = 800
 WINDOW_WIDTH = 600
@@ -114,6 +143,10 @@ passLbl.grid(column = 0, row = 1)
 password = Entry(window, show = "*", width = 30)
 password.grid(column = 1, row = 1)
 
+
+"""
+Helper functions; does not interact with Selenium drivers
+"""
 #Helper function that disables or enables all refresh buttons on main student UX
 def refreshButtonAbility(isEnabled):
     for stu in studentEntries:
@@ -134,19 +167,34 @@ def pruneStudents(studentList):
     viewedRefs = {}
     lcv = 0
     while(lcv < len(studentList)):
-        stuHref = studentList[lcv].get_attribute('href')
-        if stuHref not in viewedRefs:
-            viewedRefs[stuHref] = True
+        stu = studentList[lcv].get_attribute('href')
+        if stu not in viewedRefs:
+            viewedRefs[stu] = True
             lcv += 1
         else:
             studentList.pop(lcv)
 
+#Helper function that highlights HTML element; useful for debugging and searching interactable elements
+def highlight(element):
+    """Highlights (blinks) a Selenium Webdriver element"""
+    driver = element._parent
+    def apply_style(s):
+        driver.execute_script("arguments[0].setAttribute('style', arguments[1]);",
+                              element, s)
+    original_style = element.get_attribute('style')
+    apply_style("background: yellow; border: 2px solid red;")
+    time.sleep(10)
+    apply_style(original_style)
 
 
+
+"""
+Essential functions; interacts with Selenium drivers
+"""
 #Function takes in list of Student profiles from Radius and opens each in a new tab, recording full name and card count
 #Function uses pickling to determine last time the full student list was parsed as well as if students were dropped/added
 def recordStudent(students):
-    driver.implicitly_wait(0)
+    main_driver.implicitly_wait(0)
     startTime = datetime.datetime.now()
     timeout = 12 #hours
     
@@ -177,19 +225,19 @@ def recordStudent(students):
     
     STUDENT_HREFS = {} #reset dictionary, previous unsuccessful unpickling sets variable as NoneType otherwise
     for stu in students:
-        stuHref = stu.get_attribute('href')
-        driver.execute_script("window.open('%s', '_blank')" % stuHref)
-        driver.switch_to.window(driver.window_handles[-1])
-        [fHolder, lHolder] = splitStudentName(driver.title)
-        STUDENT_HREFS[driver.title] = stuHref
+        #stu = stu.get_attribute('href')
+        main_driver.execute_script("window.open('%s', '_blank')" % stu)
+        main_driver.switch_to.window(main_driver.window_handles[-1])
+        [fHolder, lHolder] = splitStudentName(main_driver.title)
+        STUDENT_HREFS[main_driver.title] = stu
 
-        cards = (int)(driver.find_element(By.ID, 'cardsAvailableDetail').text)
-        print(driver.title + " " + str(cards))
+        cards = (int)(main_driver.find_element(By.ID, 'cardsAvailableDetail').text)
+        print(main_driver.title + " " + str(cards))
         stuCur.execute("INSERT OR IGNORE INTO Students(fName, lName, cards) values(?,?,?)",(fHolder, lHolder, cards))
         stuCur.execute("UPDATE Students SET cards = ? WHERE fName = ? AND lName = ?", (cards, fHolder, lHolder))
         stuDB.commit()
-        driver.close()
-        driver.switch_to.window(driver.window_handles[0])
+        main_driver.close()
+        main_driver.switch_to.window(main_driver.window_handles[0])
 
     finishTime = datetime.datetime.now()
     with open(PICKLE_FILE, 'wb+') as file:
@@ -200,31 +248,82 @@ def recordStudent(students):
         pickle.dump(STUDENT_HREFS, file)
         print("STUDENT_HREFS have been pickled")
         file.close()
+    print("finish time: " + str(finishTime - startTime))
     
 
-#Function handles capturing student information for database entry/updates
-def parseStudents():
-    driver.implicitly_wait(5)
+"""Prototype function for handling >1 page of enrolled students; will replace parseStudents() once complete
+    Pseudocode- Fill enrollment filter
+                export to excel
+                open xslx file
+                parse student id numbers
+                when recording student vals, use string appending to https://radius.mathnasium.com/Student/Details/{idNumber}
+"""
+def protoParse():
+    main_driver.implicitly_wait(10)
     studentReg = "//a[starts-with(@href, '/Student/Details')]"
     global studentList
-    studentList = driver.find_elements(By.XPATH, studentReg)
-    if(len(studentList) > 0):
-        print("Student list generated...")
-    pruneStudents(studentList)#clear student list of duplicates
-    recordStudent(studentList)
-    
+    studentList = []
+    studentExcel = main_driver.find_element(By.ID, "btnExport")
+    studentExcel.click()
+    startTime = time.time()
+    dir = os.listdir(downloadPath)
+    print("Waiting on excel file to download...")
+    while(not glob.glob(os.path.join(downloadPath, "*.xlsx")) and time.time() - startTime < 30):
+        if(time.time() - startTime == 30):
+            print("Program time out; too long to download excel file")
+            break
+    stuTemplate = "https://radius.mathnasium.com/Student/Details/"
+    students = []
+    excelFile = glob.glob(os.path.join(downloadPath, "*.xlsx"))
+    for file in excelFile:
+        print("file found")
+        #reader = pd.read_excel(file)
+        #print(reader)
+        studentDF = pd.read_excel(file)
+        studentIDList = studentDF['Student Id'].tolist()
+        for id in studentIDList:
+            students.append (stuTemplate + str(id))
+        os.remove(file)
+        print("file deleted")
+    recordStudent(students)
 
-#Function interacts with Student Management page, TODO: update to dynamically select enrollment filter
-def generateStudents():
+
+"""Prototype function for creating student list with >1 page; will replace generateStudents() once complete"""
+def protoGen():
     print("Login successful")
-    enrollFilterPath = "//div[@class='container']//div[@id='single-Grid-Page']/div[2]/div[1]/div[1]/div[3]/div[1]/span[1]"
-    enFill = driver.find_element(By.XPATH, enrollFilterPath)
+    enrollFilterPath = "//div[@class='container']//div[@id='single-Grid-Page']/div[2]/div[1]/div[1]/div[3]/div[1]/span[1]" #ugly, make sure to fix
+    enFill = main_driver.find_element(By.XPATH, enrollFilterPath)
     enFill.click()
     for i in range(3): #manually scrolls through Enrollment Filters, should be fixed to dynamically find "enrolled"
         enFill.send_keys(Keys.DOWN)
     enFill.send_keys(Keys.ENTER)
-    driver.find_element(By.ID, 'btnsearch').click()
-    parseStudents()
+    main_driver.find_element(By.ID, 'btnsearch').click()
+    protoParse()
+
+
+
+#Function handles capturing student information for database entry/updates
+def parseStudents():
+    main_driver.implicitly_wait(5)
+    studentReg = "//a[starts-with(@href, '/Student/Details')]"
+    global studentList
+    studentList = main_driver.find_elements(By.XPATH, studentReg)
+    if(len(studentList) > 0):
+        print("Student list generated...")
+    pruneStudents(studentList)#clear student list of duplicates
+    #recordStudent(studentList)
+    
+#Function interacts with Student Management page, TODO: update to dynamically select enrollment filter
+def generateStudents():
+    print("Login successful")
+    enrollFilterPath = "//div[@class='container']//div[@id='single-Grid-Page']/div[2]/div[1]/div[1]/div[3]/div[1]/span[1]" #ugly, make sure to fix
+    enFill = main_driver.find_element(By.XPATH, enrollFilterPath)
+    enFill.click()
+    for i in range(3): #manually scrolls through Enrollment Filters, should be fixed to dynamically find "enrolled"
+        enFill.send_keys(Keys.DOWN)
+    enFill.send_keys(Keys.ENTER)
+    main_driver.find_element(By.ID, 'btnsearch').click()
+    #parseStudents()
 
 #Function changes tkinter window to UX that students can interact with 
 def createStudentDisplay():
@@ -262,12 +361,15 @@ def createStudentDisplay():
         fName, lName, cards = row
         studentInfo = f'{fName} {lName}:  {cards}'
         try:
-            stuHref = STUDENT_HREFS[str(fName) + " " + str(lName)]
+            stu = STUDENT_HREFS[str(fName) + " " + str(lName)]
         except KeyError:
             print("ERROR: student info not stored in HREFs. Check student records for " + str(fName) + " " + str(lName) + ". Removing student from db...")
             toBeRemoved.put( (str(fName), str(lName) ))
             continue
-        stuEntry = Student(fName, lName, cards, stuHref, studentFrame, primeRow, rowLCV)
+        except NameError:
+            print("STUDENT_HREFS not defined, check debug lines")
+            return
+        stuEntry = Student(fName, lName, cards, stu, studentFrame, primeRow, rowLCV)
         primeRow = not primeRow
         studentEntries.append(stuEntry)
         rowLCV += 1
@@ -278,21 +380,20 @@ def createStudentDisplay():
     frameCanvas.update_idletasks()
     frameCanvas.create_window((0,0), window = studentFrame, anchor = 'nw')
     frameCanvas.config(scrollregion=frameCanvas.bbox("all"))
-
-    
-    
+  
 #Function accesses 'Student Management' page, handles login on intial boot 
 def loginSub():
     errorLbl = Label(window, text = "ERROR: Unable to login")
     uName = userName.get()
     pWord = password.get() 
-    driver.get(loginUrl)
-    driver.find_element(By.ID, "UserName").send_keys(uName)
-    driver.find_element(By.ID, "Password").send_keys(pWord)
-    driver.find_element(By.ID, "login").click()
-    if not("Login" in driver.current_url):
+    main_driver.get(loginUrl)
+    main_driver.find_element(By.ID, "UserName").send_keys(uName)
+    main_driver.find_element(By.ID, "Password").send_keys(pWord)
+    main_driver.find_element(By.ID, "login").click()
+    if not("Login" in main_driver.current_url):
         errorLbl.destroy()
-        generateStudents()
+        #generateStudents()
+        protoGen()
         submitButton.destroy()
         passLbl.destroy()
         uNameLbl.destroy()
@@ -312,14 +413,13 @@ def customExit():
     warningLabel.grid()
     exitConfirm.update()
 
-    
 submitButton = Button(window, text="Submit", width = 10, height=3, bg="red", fg="black", command = loginSub)
 submitButton.grid(column=0, row=2)
-window.protocol("WM_DELETE_WINDOW", customExit)
+#window.protocol("WM_DELETE_WINDOW", customExit)
 
 while True:
     window.update_idletasks()
     window.update()
-driver.quit()
+main_driver.quit()
 
 
