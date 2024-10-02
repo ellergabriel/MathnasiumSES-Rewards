@@ -7,6 +7,8 @@ import time
 import os
 import sys
 import pickle
+import glob as glob
+import pandas as pd
 import multiprocessing
 import chromedriver_binary
 from selenium import webdriver
@@ -248,27 +250,45 @@ def recordStudent(students):
         file.close()
     
 
-
 """Prototype function for handling >1 page of enrolled students; will replace parseStudents() once complete
     Pseudocode- Fill enrollment filter
                 export to excel
                 open xslx file
                 parse student id numbers
-                when recording student vals, use string appending to radius.mathnasium.com/Student/Details/{idNumber}
+                when recording student vals, use string appending to https://radius.mathnasium.com/Student/Details/{idNumber}
 """
 def protoParse():
     main_driver.implicitly_wait(10)
     studentReg = "//a[starts-with(@href, '/Student/Details')]"
     global studentList
     studentList = []
-    pageButton = main_driver.find_element(By.CSS_SELECTOR, "[aria-label='Go to the next page']")
     studentExcel = main_driver.find_element(By.ID, "btnExport")
     studentExcel.click()
+    startTime = time.time()
+    dir = os.listdir(downloadPath)
+    print("Waiting on excel file to download...")
+    while(not glob.glob(os.path.join(downloadPath, "*.xlsx")) and time.time() - startTime < 30):
+        if(time.time() - startTime == 30):
+            print("Program time out; too long to download excel file")
+            break
+    stuTemplate = "https://radius.mathnasium.com/Student/Details/"
+    excelFile = glob.glob(os.path.join(downloadPath, "*.xlsx"))
+    for file in excelFile:
+        print("file found")
+        #os.remove(file)
+        #print("file deleted")
+
     
 
 """Prototype function for creating student list with >1 page; will replace generateStudents() once complete"""
 def protoGen():
     print("Login successful")
+    enrollFilterPath = "//div[@class='container']//div[@id='single-Grid-Page']/div[2]/div[1]/div[1]/div[3]/div[1]/span[1]" #ugly, make sure to fix
+    enFill = main_driver.find_element(By.XPATH, enrollFilterPath)
+    enFill.click()
+    for i in range(3): #manually scrolls through Enrollment Filters, should be fixed to dynamically find "enrolled"
+        enFill.send_keys(Keys.DOWN)
+    enFill.send_keys(Keys.ENTER)
     main_driver.find_element(By.ID, 'btnsearch').click()
     protoParse()
 
