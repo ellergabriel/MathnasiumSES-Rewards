@@ -167,9 +167,9 @@ def pruneStudents(studentList):
     viewedRefs = {}
     lcv = 0
     while(lcv < len(studentList)):
-        stuHref = studentList[lcv].get_attribute('href')
-        if stuHref not in viewedRefs:
-            viewedRefs[stuHref] = True
+        stu = studentList[lcv].get_attribute('href')
+        if stu not in viewedRefs:
+            viewedRefs[stu] = True
             lcv += 1
         else:
             studentList.pop(lcv)
@@ -225,11 +225,11 @@ def recordStudent(students):
     
     STUDENT_HREFS = {} #reset dictionary, previous unsuccessful unpickling sets variable as NoneType otherwise
     for stu in students:
-        stuHref = stu.get_attribute('href')
-        main_driver.execute_script("window.open('%s', '_blank')" % stuHref)
+        #stu = stu.get_attribute('href')
+        main_driver.execute_script("window.open('%s', '_blank')" % stu)
         main_driver.switch_to.window(main_driver.window_handles[-1])
         [fHolder, lHolder] = splitStudentName(main_driver.title)
-        STUDENT_HREFS[main_driver.title] = stuHref
+        STUDENT_HREFS[main_driver.title] = stu
 
         cards = (int)(main_driver.find_element(By.ID, 'cardsAvailableDetail').text)
         print(main_driver.title + " " + str(cards))
@@ -248,6 +248,7 @@ def recordStudent(students):
         pickle.dump(STUDENT_HREFS, file)
         print("STUDENT_HREFS have been pickled")
         file.close()
+    print("finish time: " + str(finishTime - startTime))
     
 
 """Prototype function for handling >1 page of enrolled students; will replace parseStudents() once complete
@@ -272,15 +273,20 @@ def protoParse():
             print("Program time out; too long to download excel file")
             break
     stuTemplate = "https://radius.mathnasium.com/Student/Details/"
+    students = []
     excelFile = glob.glob(os.path.join(downloadPath, "*.xlsx"))
     for file in excelFile:
         print("file found")
-        reader = pd.read_excel(file, usecols = [0])
-        print(reader)
+        #reader = pd.read_excel(file)
+        #print(reader)
+        studentDF = pd.read_excel(file)
+        studentIDList = studentDF['Student Id'].tolist()
+        for id in studentIDList:
+            students.append (stuTemplate + str(id))
         os.remove(file)
         print("file deleted")
+    recordStudent(students)
 
-    
 
 """Prototype function for creating student list with >1 page; will replace generateStudents() once complete"""
 def protoGen():
@@ -355,7 +361,7 @@ def createStudentDisplay():
         fName, lName, cards = row
         studentInfo = f'{fName} {lName}:  {cards}'
         try:
-            stuHref = STUDENT_HREFS[str(fName) + " " + str(lName)]
+            stu = STUDENT_HREFS[str(fName) + " " + str(lName)]
         except KeyError:
             print("ERROR: student info not stored in HREFs. Check student records for " + str(fName) + " " + str(lName) + ". Removing student from db...")
             toBeRemoved.put( (str(fName), str(lName) ))
@@ -363,7 +369,7 @@ def createStudentDisplay():
         except NameError:
             print("STUDENT_HREFS not defined, check debug lines")
             return
-        stuEntry = Student(fName, lName, cards, stuHref, studentFrame, primeRow, rowLCV)
+        stuEntry = Student(fName, lName, cards, stu, studentFrame, primeRow, rowLCV)
         primeRow = not primeRow
         studentEntries.append(stuEntry)
         rowLCV += 1
