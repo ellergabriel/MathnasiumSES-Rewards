@@ -275,8 +275,10 @@ def protoParse():
     excelFile = glob.glob(os.path.join(downloadPath, "*.xlsx"))
     for file in excelFile:
         print("file found")
-        #os.remove(file)
-        #print("file deleted")
+        reader = pd.read_excel(file, usecols = [0])
+        print(reader)
+        os.remove(file)
+        print("file deleted")
 
     
 
