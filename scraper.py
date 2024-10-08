@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from urllib.request import urlopen
 import sqlite3
 from tkinter import *
@@ -10,6 +11,7 @@ import pickle
 import glob as glob
 import pandas as pd
 import multiprocessing
+import threading
 import chromedriver_binary
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -48,7 +50,6 @@ main_driver = webdriver.Chrome(service=service, options=options)
 """
 PICKLE_FILE = 'timestamp.pkl'
 
-
 #Class maintains each Student entry on the main display
 class Student():
 
@@ -86,7 +87,7 @@ class Student():
         href = STUDENT_HREFS[self.fName + " " + self.lName]
         main_driver.execute_script("window.open('%s', '_blank')" % href)
         main_driver.switch_to.window(main_driver.window_handles[-1])
-        self.cards = (int)(main_driver.find_element(By.ID, 'cardsAvailableDetail').text)
+        self.cards = (int)(main_driver.find_element(By.CSS_SELECTOR, "span[id='cardsAvailableDetail']").text)
         stuCur.execute("UPDATE Students SET cards = ? WHERE fName = ? AND lName = ?", (self.cards, self.fName, self.lName))
         stuDB.commit()
         main_driver.close()
@@ -103,16 +104,37 @@ class Subdriver():
     def __init__(self):
         service = Service(executable_path=DRIVER_PATH)
         options = webdriver.ChromeOptions()
-        #options.add_argument("--headless=new")
+        options.add_argument("--headless=new")
         options.add_argument("--blink-settings=imageEnabled=false")
         self.driver = webdriver.Chrome(service=service, options=options)
-        #self.driver.get("https://radius.mathnasium.com/Student")
 
     def close(self):
         self.driver.quit()
 
-    def get(self, URL):
-        self.driver.get(URL)
+    def run(self, students):
+        stuDB = sqlite3.connect("Students.db")
+        stuCur = stuDB.cursor()
+        #self.driver.implicitly_wait(2.5)
+        self.driver.get(loginUrl)
+        while("Login" in self.driver.current_url):
+            self.driver.find_element(By.ID, "UserName").send_keys(uName)
+            self.driver.find_element(By.ID, "Password").send_keys(pWord)
+            self.driver.find_element(By.ID, "login").click()
+        print("beginning recording on this thread")
+        for stu in students:
+            self.driver.get(stu)
+            [fHolder, lHolder] = splitStudentName(self.driver.title)
+            STUDENT_HREFS[self.driver.title] = stu
+
+            #cards = (int)(self.driver.find_element(By.ID, 'cardsAvailableDetail').text)
+            cards = (int)(self.driver.find_element(By.CSS_SELECTOR, "span[id='cardsAvailableDetail']").text)
+            print(self.driver.title + " " + str(cards))
+            stuCur.execute("INSERT OR IGNORE INTO Students(fName, lName, cards) values(?,?,?)",(fHolder, lHolder, cards))
+            stuCur.execute("UPDATE Students SET cards = ? WHERE fName = ? AND lName = ?", (cards, fHolder, lHolder))
+            stuDB.commit()
+        self.driver.quit()
+
+
 
 #SQLite 
 stuDB = sqlite3.connect("Students.db")
@@ -163,6 +185,7 @@ def splitStudentName(student):
     return [fName, lName]
 
 #Helper function that takes the generated studentList and prunes based on previously seen href literals
+"""DEPRECATED"""
 def pruneStudents(studentList):
     viewedRefs = {}
     lcv = 0
@@ -174,18 +197,13 @@ def pruneStudents(studentList):
         else:
             studentList.pop(lcv)
 
-#Helper function that highlights HTML element; useful for debugging and searching interactable elements
-def highlight(element):
-    """Highlights (blinks) a Selenium Webdriver element"""
-    driver = element._parent
-    def apply_style(s):
-        driver.execute_script("arguments[0].setAttribute('style', arguments[1]);",
-                              element, s)
-    original_style = element.get_attribute('style')
-    apply_style("background: yellow; border: 2px solid red;")
-    time.sleep(10)
-    apply_style(original_style)
 
+"""
+Prototype function that handles multithreading of different student records
+Each subprocess will take partial list of students and perform selenium actions to record student stars
+"""
+def recordingRoutine(students, subdriver):
+    subdriver.run(students)
 
 
 """
@@ -224,6 +242,34 @@ def recordStudent(students):
     print("parsing student information...")
     
     STUDENT_HREFS = {} #reset dictionary, previous unsuccessful unpickling sets variable as NoneType otherwise
+
+    """
+    BEGIN MULTITHREADING IMPLEMENTATION
+    threads = []
+    MAX_THREADS = 5
+    for i in range(MAX_THREADS):
+
+    """
+    startThread = time.time()
+    threads = []
+    MAX_THREADS = 2
+    numStud = len(students)
+    partition = 0
+    offset = int( numStud / MAX_THREADS)
+    for i in range(MAX_THREADS):
+        if(i == MAX_THREADS - 1): #end of list, catches any students who may be left out by truncation 
+            partialList = students[partition:]
+        else:
+            partialList = students[partition : partition + offset]
+        partition += offset
+        th = threading.Thread(target=recordingRoutine, args =(partialList, Subdriver()))
+        th.start()
+        threads.append(th)
+    for th in threads:
+        th.join()
+    endThread = (time.time() - startThread) / 60 #convert to minutes
+    print("Multithreading took ", (endThread), "minutes")
+    """ Old code for single driver recording of stars
     for stu in students:
         #stu = stu.get_attribute('href')
         main_driver.execute_script("window.open('%s', '_blank')" % stu)
@@ -238,7 +284,7 @@ def recordStudent(students):
         stuDB.commit()
         main_driver.close()
         main_driver.switch_to.window(main_driver.window_handles[0])
-
+    """
     finishTime = datetime.datetime.now()
     with open(PICKLE_FILE, 'wb+') as file:
         pickle.dump(finishTime, file)
@@ -248,7 +294,7 @@ def recordStudent(students):
         pickle.dump(STUDENT_HREFS, file)
         print("STUDENT_HREFS have been pickled")
         file.close()
-    print("finish time: " + str(finishTime - startTime))
+    print("finish time: " + str(finishTime - startTime) + " using ", (MAX_THREADS), " threads")
     
 
 """Prototype function for handling >1 page of enrolled students; will replace parseStudents() once complete
@@ -286,7 +332,7 @@ def protoParse():
         os.remove(file)
         print("file deleted")
     recordStudent(students)
-
+    print("Finished threading")
 
 """Prototype function for creating student list with >1 page; will replace generateStudents() once complete"""
 def protoGen():
@@ -384,6 +430,7 @@ def createStudentDisplay():
 #Function accesses 'Student Management' page, handles login on intial boot 
 def loginSub():
     errorLbl = Label(window, text = "ERROR: Unable to login")
+    global uName, pWord
     uName = userName.get()
     pWord = password.get() 
     main_driver.get(loginUrl)
