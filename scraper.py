@@ -33,7 +33,7 @@ DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #Fil
 
 service = Service(executable_path=DRIVER_PATH)
 options = webdriver.ChromeOptions()
-options.add_argument("--headless=new")
+#options.add_argument("--headless=new")
 #print(os.path.dirname(os.path.realpath(__file__)))
 downloadPath = os.path.dirname(os.path.realpath(sys.argv[0])) #downloads files to local executable
 prefs = {'download.default_directory' : downloadPath}
@@ -87,7 +87,7 @@ class Student():
         href = STUDENT_HREFS[self.fName + " " + self.lName]
         main_driver.execute_script("window.open('%s', '_blank')" % href)
         main_driver.switch_to.window(main_driver.window_handles[-1])
-        self.cards = (int)(main_driver.find_element(By.ID, 'cardsAvailableDetail').text)
+        self.cards = (int)(main_driver.find_element(By.CSS_SELECTOR, "span[id='cardsAvailableDetail']").text)
         stuCur.execute("UPDATE Students SET cards = ? WHERE fName = ? AND lName = ?", (self.cards, self.fName, self.lName))
         stuDB.commit()
         main_driver.close()
@@ -114,7 +114,7 @@ class Subdriver():
     def run(self, students):
         stuDB = sqlite3.connect("Students.db")
         stuCur = stuDB.cursor()
-        self.driver.implicitly_wait(5)
+        #self.driver.implicitly_wait(2.5)
         self.driver.get(loginUrl)
         while("Login" in self.driver.current_url):
             self.driver.find_element(By.ID, "UserName").send_keys(uName)
@@ -123,18 +123,15 @@ class Subdriver():
         print("beginning recording on this thread")
         for stu in students:
             self.driver.get(stu)
-            #self.driver.execute_script("window.open('%s', '_blank')" % stu)
-            #self.driver.switch_to.window(self.driver.window_handles[-1])
             [fHolder, lHolder] = splitStudentName(self.driver.title)
             STUDENT_HREFS[self.driver.title] = stu
 
-            cards = (int)(self.driver.find_element(By.ID, 'cardsAvailableDetail').text)
+            #cards = (int)(self.driver.find_element(By.ID, 'cardsAvailableDetail').text)
+            cards = (int)(self.driver.find_element(By.CSS_SELECTOR, "span[id='cardsAvailableDetail']").text)
             print(self.driver.title + " " + str(cards))
             stuCur.execute("INSERT OR IGNORE INTO Students(fName, lName, cards) values(?,?,?)",(fHolder, lHolder, cards))
             stuCur.execute("UPDATE Students SET cards = ? WHERE fName = ? AND lName = ?", (cards, fHolder, lHolder))
             stuDB.commit()
-            #self.driver.close()
-            #self.driver.switch_to.window(main_driver.window_handles[0])
         self.driver.quit()
 
 
@@ -202,7 +199,7 @@ def pruneStudents(studentList):
 
 
 """
-Prototype function that handles multiprocessing of different student records
+Prototype function that handles multithreading of different student records
 Each subprocess will take partial list of students and perform selenium actions to record student stars
 """
 def recordingRoutine(students, subdriver):
@@ -234,7 +231,7 @@ def recordStudent(students):
                 print("STUDENT_HREFS loaded")
                 file.close()
                 print("within 12 hours of last update, skipping database refresh...")
-                #return
+                return
             if(timeDiff > timeout):
                 print("Over 12 hours since last refresh")
             if(len(students) != studentCount):
@@ -255,7 +252,7 @@ def recordStudent(students):
     """
     startThread = time.time()
     threads = []
-    MAX_THREADS = 3
+    MAX_THREADS = 2
     numStud = len(students)
     partition = 0
     offset = int( numStud / MAX_THREADS)
@@ -272,7 +269,7 @@ def recordStudent(students):
         th.join()
     endThread = (time.time() - startThread) / 60 #convert to minutes
     print("Multithreading took ", (endThread), "minutes")
-    """
+    """ Old code for single driver recording of stars
     for stu in students:
         #stu = stu.get_attribute('href')
         main_driver.execute_script("window.open('%s', '_blank')" % stu)
@@ -297,8 +294,7 @@ def recordStudent(students):
         pickle.dump(STUDENT_HREFS, file)
         print("STUDENT_HREFS have been pickled")
         file.close()
-    print("finish time: " + str(finishTime - startTime))
-    #print("students processed : ",(counter), " vs. num of students: ", (numStud))
+    print("finish time: " + str(finishTime - startTime) + " using ", (MAX_THREADS), " threads")
     
 
 """Prototype function for handling >1 page of enrolled students; will replace parseStudents() once complete
