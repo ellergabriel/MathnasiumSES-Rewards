@@ -34,7 +34,6 @@ DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #Fil
 service = Service(executable_path=DRIVER_PATH)
 options = webdriver.ChromeOptions()
 #options.add_argument("--headless=new")
-#print(os.path.dirname(os.path.realpath(__file__)))
 downloadPath = os.path.dirname(os.path.realpath(sys.argv[0])) #downloads files to local executable
 prefs = {'download.default_directory' : downloadPath}
 options.add_argument("--blink-settings=imageEnabled=false")
@@ -267,8 +266,17 @@ def recordStudent(students):
         threads.append(th)
     for th in threads:
         th.join()
-    endThread = (time.time() - startThread) / 60 #convert to minutes
-    print("Multithreading took ", (endThread), "minutes")
+    finishTime = datetime.datetime.now()
+    with open(PICKLE_FILE, 'wb+') as file:
+        pickle.dump(finishTime, file)
+        print(str(finishTime) + " time stamp has been pickled")
+        pickle.dump(len(students), file)
+        print("studentCount has been pickled")
+        pickle.dump(STUDENT_HREFS, file)
+        print("STUDENT_HREFS have been pickled")
+        file.close()
+    print("finish time: " + str(finishTime - startTime) + " using ", (MAX_THREADS), " threads")
+    
     """ Old code for single driver recording of stars
     for stu in students:
         #stu = stu.get_attribute('href')
@@ -285,16 +293,6 @@ def recordStudent(students):
         main_driver.close()
         main_driver.switch_to.window(main_driver.window_handles[0])
     """
-    finishTime = datetime.datetime.now()
-    with open(PICKLE_FILE, 'wb+') as file:
-        pickle.dump(finishTime, file)
-        print(str(finishTime) + " time stamp has been pickled")
-        pickle.dump(len(students), file)
-        print("studentCount has been pickled")
-        pickle.dump(STUDENT_HREFS, file)
-        print("STUDENT_HREFS have been pickled")
-        file.close()
-    print("finish time: " + str(finishTime - startTime) + " using ", (MAX_THREADS), " threads")
     
 
 """Prototype function for handling >1 page of enrolled students; will replace parseStudents() once complete
@@ -315,7 +313,7 @@ def protoParse():
     dir = os.listdir(downloadPath)
     print("Waiting on excel file to download...")
     while(not glob.glob(os.path.join(downloadPath, "*.xlsx")) and time.time() - startTime < 30):
-        if(time.time() - startTime == 30):
+        if(time.time() - startTime >= 30):
             print("Program time out; too long to download excel file")
             break
     stuTemplate = "https://radius.mathnasium.com/Student/Details/"
@@ -323,8 +321,6 @@ def protoParse():
     excelFile = glob.glob(os.path.join(downloadPath, "*.xlsx"))
     for file in excelFile:
         print("file found")
-        #reader = pd.read_excel(file)
-        #print(reader)
         studentDF = pd.read_excel(file)
         studentIDList = studentDF['Student Id'].tolist()
         for id in studentIDList:
@@ -332,11 +328,11 @@ def protoParse():
         os.remove(file)
         print("file deleted")
     recordStudent(students)
-    print("Finished threading")
 
 """Prototype function for creating student list with >1 page; will replace generateStudents() once complete"""
 def protoGen():
     print("Login successful")
+    """
     enrollFilterPath = "//div[@class='container']//div[@id='single-Grid-Page']/div[2]/div[1]/div[1]/div[3]/div[1]/span[1]" #ugly, make sure to fix
     enFill = main_driver.find_element(By.XPATH, enrollFilterPath)
     enFill.click()
@@ -344,6 +340,13 @@ def protoGen():
         enFill.send_keys(Keys.DOWN)
     enFill.send_keys(Keys.ENTER)
     main_driver.find_element(By.ID, 'btnsearch').click()
+    """
+    filter = main_driver.find_element(By.CSS_SELECTOR, "span[aria-owns='enrollmentFiltersDropDownList_listbox']")
+    filter.click()
+    for i in range(3):
+        filter.send_keys(Keys.DOWN)
+    filter.send_keys(Keys.ENTER)
+    main_driver.find_element(By.CSS_SELECTOR, "button[id='btnsearch']").click()
     protoParse()
 
 
