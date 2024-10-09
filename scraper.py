@@ -33,7 +33,7 @@ DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #Fil
 
 service = Service(executable_path=DRIVER_PATH)
 options = webdriver.ChromeOptions()
-#options.add_argument("--headless=new")
+options.add_argument("--headless=new")
 downloadPath = os.path.dirname(os.path.realpath(sys.argv[0])) #downloads files to local executable
 prefs = {'download.default_directory' : downloadPath}
 options.add_argument("--blink-settings=imageEnabled=false")
@@ -113,12 +113,19 @@ class Subdriver():
     def run(self, students):
         stuDB = sqlite3.connect("Students.db")
         stuCur = stuDB.cursor()
-        #self.driver.implicitly_wait(2.5)
+        startTime = time.time()
         self.driver.get(loginUrl)
-        while("Login" in self.driver.current_url):
+        while("Login" in self.driver.current_url and time.time() - startTime < 60):
             self.driver.find_element(By.ID, "UserName").send_keys(uName)
             self.driver.find_element(By.ID, "Password").send_keys(pWord)
             self.driver.find_element(By.ID, "login").click()
+            #self.driver.find_element(By.CSS_SELECTOR, "input[id='UserName']").send_keys(uName)
+            #self.driver.find_element(By.CSS_SELECTOR, "input[id='Password']").send_keys(pWord)
+            #self.driver.find_element(By.CSS_SELECTOR, "input[id='login']").click()
+            if(time.time() - startTime >= 60):
+                print("MMore than a minute to login on multithreading")
+                self.driver.quit()
+                return
         print("beginning recording on this thread")
         for stu in students:
             self.driver.get(stu)
@@ -184,7 +191,7 @@ def splitStudentName(student):
     return [fName, lName]
 
 #Helper function that takes the generated studentList and prunes based on previously seen href literals
-"""DEPRECATED"""
+"""DEPRECATED
 def pruneStudents(studentList):
     viewedRefs = {}
     lcv = 0
@@ -195,7 +202,7 @@ def pruneStudents(studentList):
             lcv += 1
         else:
             studentList.pop(lcv)
-
+"""
 
 """
 Prototype function that handles multithreading of different student records
@@ -230,7 +237,7 @@ def recordStudent(students):
                 print("STUDENT_HREFS loaded")
                 file.close()
                 print("within 12 hours of last update, skipping database refresh...")
-                return
+                #return
             if(timeDiff > timeout):
                 print("Over 12 hours since last refresh")
             if(len(students) != studentCount):
@@ -275,7 +282,7 @@ def recordStudent(students):
         pickle.dump(STUDENT_HREFS, file)
         print("STUDENT_HREFS have been pickled")
         file.close()
-    print("finish time: " + str(finishTime - startTime) + " using ", (MAX_THREADS), " threads")
+    print("finish time: " + str(finishTime - startTime) + " using", (MAX_THREADS), "threads")
     
     """ Old code for single driver recording of stars
     for stu in students:
@@ -302,7 +309,7 @@ def recordStudent(students):
                 parse student id numbers
                 when recording student vals, use string appending to https://radius.mathnasium.com/Student/Details/{idNumber}
 """
-def protoParse():
+def parseStudents():
     main_driver.implicitly_wait(10)
     studentReg = "//a[starts-with(@href, '/Student/Details')]"
     global studentList
@@ -329,8 +336,8 @@ def protoParse():
         print("file deleted")
     recordStudent(students)
 
-"""Prototype function for creating student list with >1 page; will replace generateStudents() once complete"""
-def protoGen():
+"""Function handles recording URLs for student pages who are enrolled"""
+def generateStudents():
     print("Login successful")
     """
     enrollFilterPath = "//div[@class='container']//div[@id='single-Grid-Page']/div[2]/div[1]/div[1]/div[3]/div[1]/span[1]" #ugly, make sure to fix
@@ -347,10 +354,14 @@ def protoGen():
         filter.send_keys(Keys.DOWN)
     filter.send_keys(Keys.ENTER)
     main_driver.find_element(By.CSS_SELECTOR, "button[id='btnsearch']").click()
-    protoParse()
+    parseStudents()
 
 
 
+"""
+Deprecated functions from the alpha version 
+"""
+"""
 #Function handles capturing student information for database entry/updates
 def parseStudents():
     main_driver.implicitly_wait(5)
@@ -373,6 +384,8 @@ def generateStudents():
     enFill.send_keys(Keys.ENTER)
     main_driver.find_element(By.ID, 'btnsearch').click()
     #parseStudents()
+"""
+
 
 #Function changes tkinter window to UX that students can interact with 
 def createStudentDisplay():
@@ -442,8 +455,7 @@ def loginSub():
     main_driver.find_element(By.ID, "login").click()
     if not("Login" in main_driver.current_url):
         errorLbl.destroy()
-        #generateStudents()
-        protoGen()
+        generateStudents()
         submitButton.destroy()
         passLbl.destroy()
         uNameLbl.destroy()
