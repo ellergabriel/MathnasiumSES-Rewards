@@ -205,7 +205,7 @@ def pruneStudents(studentList):
 """
 
 """
-Prototype function that handles multithreading of different student records
+function that handles multithreading of different student records
 Each subprocess will take partial list of students and perform selenium actions to record student stars
 """
 def recordingRoutine(students, subdriver):
@@ -249,14 +249,6 @@ def recordStudent(students):
     
     STUDENT_HREFS = {} #reset dictionary, previous unsuccessful unpickling sets variable as NoneType otherwise
 
-    """
-    BEGIN MULTITHREADING IMPLEMENTATION
-    threads = []
-    MAX_THREADS = 5
-    for i in range(MAX_THREADS):
-
-    """
-    startThread = time.time()
     threads = []
     MAX_THREADS = 2
     numStud = len(students)
@@ -302,7 +294,7 @@ def recordStudent(students):
     """
     
 
-"""Prototype function for handling >1 page of enrolled students; will replace parseStudents() once complete
+"""function for handling >1 page of enrolled students; will replace parseStudents() once complete
     Pseudocode- Fill enrollment filter
                 export to excel
                 open xslx file
@@ -311,13 +303,11 @@ def recordStudent(students):
 """
 def parseStudents():
     main_driver.implicitly_wait(10)
-    studentReg = "//a[starts-with(@href, '/Student/Details')]"
     global studentList
     studentList = []
     studentExcel = main_driver.find_element(By.ID, "btnExport")
     studentExcel.click()
     startTime = time.time()
-    dir = os.listdir(downloadPath)
     print("Waiting on excel file to download...")
     while(not glob.glob(os.path.join(downloadPath, "*.xlsx")) and time.time() - startTime < 30):
         if(time.time() - startTime >= 30):
@@ -360,8 +350,7 @@ def generateStudents():
 
 """
 Deprecated functions from the alpha version 
-"""
-"""
+
 #Function handles capturing student information for database entry/updates
 def parseStudents():
     main_driver.implicitly_wait(5)
