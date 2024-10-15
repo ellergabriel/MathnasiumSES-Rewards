@@ -33,7 +33,7 @@ DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #Fil
 
 service = Service(executable_path=DRIVER_PATH)
 options = webdriver.ChromeOptions()
-options.add_argument("--headless=new")
+options.add_argument("--headless=old")
 downloadPath = os.path.dirname(os.path.realpath(sys.argv[0])) #downloads files to local executable
 prefs = {'download.default_directory' : downloadPath}
 options.add_argument("--blink-settings=imageEnabled=false")
@@ -153,6 +153,18 @@ window = Tk()
 window.title("Digital Rewards Tracker")
 window.geometry('350x200')
 
+"""Debug function for testing menu implementation"""
+def testMenu():
+    print("Menu button is working")
+
+
+topMenu = Menu(window)
+
+settingsMenu = Menu(topMenu, tearoff = 0)
+settingsMenu.add_command(label = "Test", command = testMenu)
+topMenu.add_cascade(menu = settingsMenu, label = "Settings")
+window.config(menu = topMenu)
+
 """Local testing"""
 window.iconbitmap("A+.ico")
 """deliverable"""
@@ -236,8 +248,8 @@ def recordStudent(students):
                 STUDENT_HREFS = pickle.load(file)
                 print("STUDENT_HREFS loaded")
                 file.close()
-                print("within 12 hours of last update, skipping database refresh...")
-                #return
+                print("Mass update not needed, skipping database refresh...")
+                return
             if(timeDiff > timeout):
                 print("Over 12 hours since last refresh")
             if(len(students) != studentCount):
@@ -346,8 +358,6 @@ def generateStudents():
     main_driver.find_element(By.CSS_SELECTOR, "button[id='btnsearch']").click()
     parseStudents()
 
-
-
 """
 Deprecated functions from the alpha version 
 
@@ -374,7 +384,6 @@ def generateStudents():
     main_driver.find_element(By.ID, 'btnsearch').click()
     #parseStudents()
 """
-
 
 #Function changes tkinter window to UX that students can interact with 
 def createStudentDisplay():
