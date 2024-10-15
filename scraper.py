@@ -10,7 +10,6 @@ import sys
 import pickle
 import glob as glob
 import pandas as pd
-import multiprocessing
 import threading
 import chromedriver_binary
 from selenium import webdriver
@@ -103,7 +102,7 @@ class Subdriver():
     def __init__(self):
         service = Service(executable_path=DRIVER_PATH)
         options = webdriver.ChromeOptions()
-        options.add_argument("--headless=new")
+        options.add_argument("--headless=old")
         options.add_argument("--blink-settings=imageEnabled=false")
         self.driver = webdriver.Chrome(service=service, options=options)
 
@@ -153,6 +152,7 @@ window = Tk()
 window.title("Digital Rewards Tracker")
 window.geometry('350x200')
 
+menubar = Menu(window)
 """Debug function for testing menu implementation"""
 def testMenu():
     print("Menu button is working")
@@ -164,6 +164,7 @@ settingsMenu = Menu(topMenu, tearoff = 0)
 settingsMenu.add_command(label = "Test", command = testMenu)
 topMenu.add_cascade(menu = settingsMenu, label = "Settings")
 window.config(menu = topMenu)
+
 
 """Local testing"""
 window.iconbitmap("A+.ico")
