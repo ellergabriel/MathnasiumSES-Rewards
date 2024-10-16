@@ -122,8 +122,8 @@ class Subdriver():
             #self.driver.find_element(By.CSS_SELECTOR, "input[id='Password']").send_keys(pWord)
             #self.driver.find_element(By.CSS_SELECTOR, "input[id='login']").click()
             if(time.time() - startTime >= 60):
-                print("MMore than a minute to login on multithreading")
-                self.driver.quit()
+                print("MMore than a minute to login on multithreading, trying login...")
+                self.driver.get(loginUrl)
                 return
         print("beginning recording on this thread")
         for stu in students:
@@ -152,19 +152,15 @@ window = Tk()
 window.title("Digital Rewards Tracker")
 window.geometry('350x200')
 
+#Settings bar
 menubar = Menu(window)
-"""Debug function for testing menu implementation"""
-def testMenu():
-    print("Menu button is working")
-
 def credentialsMenu():
     settingsMenuWindow = Toplevel()
     settingsMenuWindow.title("CD Settings")
     settingsMenuWindow.geometry("300x300")
+    settingsMenuWindow.focus_force()
     settingsMenuWindow.grab_set()
-
 topMenu = Menu(window)
-
 settingsMenu = Menu(topMenu, tearoff = 0)
 topMenu.add_cascade(menu = settingsMenu, label = "Settings")
 settingsMenu.add_command(label = "Credentials", command = credentialsMenu)
