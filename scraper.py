@@ -32,7 +32,7 @@ DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #Fil
 
 service = Service(executable_path=DRIVER_PATH)
 options = webdriver.ChromeOptions()
-#options.add_argument("--headless=old")
+options.add_argument("--headless=old")
 downloadPath = os.path.dirname(os.path.realpath(sys.argv[0])) #downloads files to local executable
 prefs = {'download.default_directory' : downloadPath}
 options.add_argument("--blink-settings=imageEnabled=false")
@@ -158,7 +158,10 @@ def testMenu():
     print("Menu button is working")
 
 def credentialsMenu():
-    print("Opening credentials menu")
+    settingsMenuWindow = Toplevel()
+    settingsMenuWindow.title("CD Settings")
+    settingsMenuWindow.geometry("300x300")
+    settingsMenuWindow.grab_set()
 
 topMenu = Menu(window)
 
