@@ -26,9 +26,9 @@ from selenium.common.exceptions import TimeoutException
 #Selenium 
 loginUrl= "https://radius.mathnasium.com/Student"
 """Local testing"""
-DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #File path for local testing
+#DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #File path for local testing
 """Deliverable"""
-#DRIVER_PATH = os.path.join(os.path.dirname(__file__), 'Drivers\chromedriver.exe') #File path for deliverable
+DRIVER_PATH = os.path.join(os.path.dirname(__file__), 'Drivers\chromedriver.exe') #File path for deliverable
 
 service = Service(executable_path=DRIVER_PATH)
 options = webdriver.ChromeOptions()
@@ -122,7 +122,7 @@ class Subdriver():
             #self.driver.find_element(By.CSS_SELECTOR, "input[id='Password']").send_keys(pWord)
             #self.driver.find_element(By.CSS_SELECTOR, "input[id='login']").click()
             if(time.time() - startTime >= 60):
-                print("MMore than a minute to login on multithreading, trying login...")
+                print("More than a minute to login on multithreading, trying login...")
                 self.driver.get(loginUrl)
                 return
         print("beginning recording on this thread")
@@ -130,8 +130,6 @@ class Subdriver():
             self.driver.get(stu)
             [fHolder, lHolder] = splitStudentName(self.driver.title)
             STUDENT_HREFS[self.driver.title] = stu
-
-            #cards = (int)(self.driver.find_element(By.ID, 'cardsAvailableDetail').text)
             cards = (int)(self.driver.find_element(By.CSS_SELECTOR, "span[id='cardsAvailableDetail']").text)
             print(self.driver.title + " " + str(cards))
             stuCur.execute("INSERT OR IGNORE INTO Students(fName, lName, cards) values(?,?,?)",(fHolder, lHolder, cards))
@@ -168,9 +166,9 @@ window.config(menu = topMenu)
 
 
 """Local testing"""
-window.iconbitmap("A+.ico")
+#window.iconbitmap("A+.ico")
 """deliverable"""
-#window.iconbitmap(os.path.join(os.path.dirname(__file__), 'A+.ico'))
+window.iconbitmap(os.path.join(os.path.dirname(__file__), 'A+.ico'))
 
 WINDOW_HEIGHT = 800
 WINDOW_WIDTH = 600
