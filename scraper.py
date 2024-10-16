@@ -19,7 +19,7 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.action_chains import ActionChains
+from selenium.common.exceptions import TimeoutException
 
 
 
@@ -32,7 +32,7 @@ DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #Fil
 
 service = Service(executable_path=DRIVER_PATH)
 options = webdriver.ChromeOptions()
-options.add_argument("--headless=old")
+#options.add_argument("--headless=old")
 downloadPath = os.path.dirname(os.path.realpath(sys.argv[0])) #downloads files to local executable
 prefs = {'download.default_directory' : downloadPath}
 options.add_argument("--blink-settings=imageEnabled=false")
@@ -157,12 +157,14 @@ menubar = Menu(window)
 def testMenu():
     print("Menu button is working")
 
+def credentialsMenu():
+    print("Opening credentials menu")
 
 topMenu = Menu(window)
 
 settingsMenu = Menu(topMenu, tearoff = 0)
-settingsMenu.add_command(label = "Test", command = testMenu)
 topMenu.add_cascade(menu = settingsMenu, label = "Settings")
+settingsMenu.add_command(label = "Credentials", command = credentialsMenu)
 window.config(menu = topMenu)
 
 
@@ -447,11 +449,17 @@ def loginSub():
     errorLbl = Label(window, text = "ERROR: Unable to login")
     global uName, pWord
     uName = userName.get()
-    pWord = password.get() 
+    pWord = password.get()
+    main_driver.set_page_load_timeout(45)
     main_driver.get(loginUrl)
-    main_driver.find_element(By.ID, "UserName").send_keys(uName)
-    main_driver.find_element(By.ID, "Password").send_keys(pWord)
-    main_driver.find_element(By.ID, "login").click()
+    while("Login" in main_driver.current_url):
+        try: 
+            main_driver.find_element(By.ID, "UserName").send_keys(uName)
+            main_driver.find_element(By.ID, "Password").send_keys(pWord)
+            main_driver.find_element(By.ID, "login").click()
+        except TimeoutException:
+            print("Timed out attempting to login, trying again...")
+            main_driver.get(loginUrl) #reopens login page for another attempt 
     if not("Login" in main_driver.current_url):
         errorLbl.destroy()
         generateStudents()
