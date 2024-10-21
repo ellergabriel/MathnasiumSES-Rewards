@@ -26,9 +26,9 @@ from selenium.common.exceptions import TimeoutException
 #Selenium 
 loginUrl= "https://radius.mathnasium.com/Student"
 """Local testing"""
-#DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #File path for local testing
+DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #File path for local testing
 """Deliverable"""
-DRIVER_PATH = os.path.join(os.path.dirname(__file__), 'Drivers\chromedriver.exe') #File path for deliverable
+#DRIVER_PATH = os.path.join(os.path.dirname(__file__), 'Drivers\chromedriver.exe') #File path for deliverable
 
 service = Service(executable_path=DRIVER_PATH)
 options = webdriver.ChromeOptions()
@@ -137,6 +137,22 @@ class Subdriver():
             stuDB.commit()
         self.driver.quit()
 
+#Class for menu bar in window
+class Menubar():
+    def __init__(self, window):
+        self.menubar = Menu(window)
+        self.settingsMenu = Menu(self.menubar, tearoff = 0)
+        self.menubar.add_cascade(menu = self.settingsMenu, label = "Settings")
+        self.settingsMenu.add_command(label = "Credentials", command = credentialsMenu)
+        window.config(menu = self.menubar)
+
+#Function handles credentials menu behavior
+def credentialsMenu():
+    settingsMenuWindow = Toplevel()
+    settingsMenuWindow.title("CD Settings")
+    settingsMenuWindow.geometry("300x300")
+    settingsMenuWindow.focus_force()
+    settingsMenuWindow.grab_set()
 
 
 #SQLite 
@@ -150,6 +166,7 @@ window = Tk()
 window.title("Digital Rewards Tracker")
 window.geometry('350x200')
 
+"""
 #Settings bar
 menubar = Menu(window)
 def credentialsMenu():
@@ -163,12 +180,13 @@ settingsMenu = Menu(topMenu, tearoff = 0)
 topMenu.add_cascade(menu = settingsMenu, label = "Settings")
 settingsMenu.add_command(label = "Credentials", command = credentialsMenu)
 window.config(menu = topMenu)
-
+"""
+menubar = Menubar(window)
 
 """Local testing"""
-#window.iconbitmap("A+.ico")
+window.iconbitmap("A+.ico")
 """deliverable"""
-window.iconbitmap(os.path.join(os.path.dirname(__file__), 'A+.ico'))
+#window.iconbitmap(os.path.join(os.path.dirname(__file__), 'A+.ico'))
 
 WINDOW_HEIGHT = 800
 WINDOW_WIDTH = 600
@@ -183,7 +201,10 @@ passLbl.grid(column = 0, row = 1)
 password = Entry(window, show = "*", width = 30)
 password.grid(column = 1, row = 1)
 
-
+pinLbl = Label(window, text = "PIN")
+pinLbl.grid(column = 0, row = 2)
+pin = Entry(window, show="*", width = 15)
+pin.grid(column = 1, row = 2)
 """
 Helper functions; does not interact with Selenium drivers
 """
@@ -447,6 +468,7 @@ def loginSub():
     global uName, pWord
     uName = userName.get()
     pWord = password.get()
+    loginPin = pin.get()
     main_driver.set_page_load_timeout(45)
     main_driver.get(loginUrl)
     while("Login" in main_driver.current_url):
@@ -480,8 +502,8 @@ def customExit():
     exitConfirm.update()
 
 submitButton = Button(window, text="Submit", width = 10, height=3, bg="red", fg="black", command = loginSub)
-submitButton.grid(column=0, row=2)
-#window.protocol("WM_DELETE_WINDOW", customExit)
+submitButton.grid(column=0, row=3)
+window.protocol("WM_DELETE_WINDOW", customExit)
 
 while True:
     window.update_idletasks()
