@@ -150,7 +150,21 @@ class Menubar():
 def credentialsMenu():
     settingsMenuWindow = Toplevel()
     settingsMenuWindow.title("CD Settings")
-    settingsMenuWindow.geometry("300x300")
+    settingsMenuWindow.geometry("300x150")
+    userLbl = Label(settingsMenuWindow, text = "Username")
+    settingsUName = Entry(settingsMenuWindow, width = 30)
+    userLbl.grid(column = 0, row = 0)
+    settingsUName.grid(column = 1, row = 0)
+    passLbl = Label(settingsMenuWindow, text = "Password")
+    settingsPass = Entry(settingsMenuWindow, show = "*", width = "30")
+    passLbl.grid(column = 0, row = 1)
+    settingsPass.grid(column = 1, row = 1)
+    masterPinLbl = Label(settingsMenuWindow, text = "Master PIN")
+    settingsMasterPin = Entry(settingsMenuWindow, show = "*", width = 15)
+    masterPinLbl.grid(column = 0, row = 2)
+    settingsMasterPin.grid(column = 1, row = 2)
+
+
     settingsMenuWindow.focus_force()
     settingsMenuWindow.grab_set()
 
