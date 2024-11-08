@@ -20,6 +20,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
+from gui import initializeGui, createRefreshMessage, customExit
 
 
 
@@ -39,6 +40,52 @@ options.add_argument("--blink-settings=imageEnabled=false")
 options.add_experimental_option('prefs', prefs)
 main_driver = webdriver.Chrome(service=service, options=options)
 
+#SQLite 
+stuDB = sqlite3.connect("Students.db")
+stuCur = stuDB.cursor()
+stuTable = "CREATE TABLE IF NOT EXISTS Students(fName CHAR(31),lName CHAR(31),cards INT, UNIQUE(fName, lName));"
+stuCur.execute(stuTable)
+
+#Tkinter widgets
+window = Tk()
+userName, password, uNameLbl, passLbl  = initializeGui(window)
+#! window.title("Digital Rewards Tracker")
+#! window.geometry('350x200')
+
+#! menubar = Menu(window)
+#! """Debug function for testing menu implementation"""
+#! def testMenu():
+#!     print("Menu button is working")
+
+#! def credentialsMenu():
+#!     print("Opening credentials menu")
+
+#! topMenu = Menu(window)
+
+#! settingsMenu = Menu(topMenu, tearoff = 0)
+#! topMenu.add_cascade(menu = settingsMenu, label = "Settings")
+#! settingsMenu.add_command(label = "Credentials", command = credentialsMenu)
+#! window.config(menu = topMenu)
+
+
+#! """Local testing"""
+#! window.iconbitmap("A+.ico")
+#! """deliverable"""
+#! #window.iconbitmap(os.path.join(os.path.dirname(__file__), 'A+.ico'))
+
+
+#! uNameLbl = Label(window, text="Username")
+#! uNameLbl.grid(column = 0, row = 0)
+#! userName = Entry(window, width = 30)
+#! userName.grid(column = 1, row = 0)
+
+#! passLbl = Label(window, text = "Password")
+#! passLbl.grid(column = 0, row = 1)
+#! password = Entry(window, show = "*", width = 30)
+#! password.grid(column = 1, row = 1)
+
+WINDOW_HEIGHT = 800
+WINDOW_WIDTH = 600
 
 #Global variable for all Selenium driver instances
 """Pickle file must go in order as follows:
@@ -70,17 +117,18 @@ class Student():
         print("beginning refresh for " + self.fName + " " + self.lName)
         refreshButtonAbility(False) #disables refresh buttons
 
-        #refresh message creation
-        topMessage = Toplevel()
-        topMessage.title("")
-        refreshMsg = Message(topMessage, text = "Refreshing your card count, please be patient.", font = ('Arial', 25, 'bold'))
-        refreshMsg.pack(expand = True)
-        topMessage.geometry('400x400')
-        topX = window.winfo_x() + window.winfo_width()//2 - topMessage.winfo_width()//2
-        topY = window.winfo_y() + window.winfo_height()//2 - topMessage.winfo_height()//2
-        topMessage.geometry(f"+{topX}+{topY}")
-        topMessage.update()
-        topMessage.grab_set()
+        topMessage = createRefreshMessage(window)
+        #! #refresh message creation
+        #! topMessage = Toplevel()
+        #! topMessage.title("")
+        #! refreshMsg = Message(topMessage, text = "Refreshing your card count, please be patient.", font = ('Arial', 25, 'bold'))
+        #! refreshMsg.pack(expand = True)
+        #! topMessage.geometry('400x400')
+        #! topX = window.winfo_x() + window.winfo_width()//2 - topMessage.winfo_width()//2
+        #! topY = window.winfo_y() + window.winfo_height()//2 - topMessage.winfo_height()//2
+        #! topMessage.geometry(f"+{topX}+{topY}")
+        #! topMessage.update()
+        #! topMessage.grab_set()
         
         href = STUDENT_HREFS[self.fName + " " + self.lName]
         main_driver.execute_script("window.open('%s', '_blank')" % href)
@@ -115,8 +163,8 @@ class Subdriver():
         startTime = time.time()
         self.driver.get(loginUrl)
         while("Login" in self.driver.current_url and time.time() - startTime < 60):
-            self.driver.find_element(By.ID, "UserName").send_keys(uName)
-            self.driver.find_element(By.ID, "Password").send_keys(pWord)
+            self.driver.find_element(By.ID, "UserName").send_keys(userName.get())
+            self.driver.find_element(By.ID, "Password").send_keys(password.get())
             self.driver.find_element(By.ID, "login").click()
             #self.driver.find_element(By.CSS_SELECTOR, "input[id='UserName']").send_keys(uName)
             #self.driver.find_element(By.CSS_SELECTOR, "input[id='Password']").send_keys(pWord)
@@ -138,53 +186,6 @@ class Subdriver():
             stuCur.execute("UPDATE Students SET cards = ? WHERE fName = ? AND lName = ?", (cards, fHolder, lHolder))
             stuDB.commit()
         self.driver.quit()
-
-
-
-#SQLite 
-stuDB = sqlite3.connect("Students.db")
-stuCur = stuDB.cursor()
-stuTable = "CREATE TABLE IF NOT EXISTS Students(fName CHAR(31),lName CHAR(31),cards INT, UNIQUE(fName, lName));"
-stuCur.execute(stuTable)
-
-#Tkinter widgets
-window = Tk()
-window.title("Digital Rewards Tracker")
-window.geometry('350x200')
-
-menubar = Menu(window)
-"""Debug function for testing menu implementation"""
-def testMenu():
-    print("Menu button is working")
-
-def credentialsMenu():
-    print("Opening credentials menu")
-
-topMenu = Menu(window)
-
-settingsMenu = Menu(topMenu, tearoff = 0)
-topMenu.add_cascade(menu = settingsMenu, label = "Settings")
-settingsMenu.add_command(label = "Credentials", command = credentialsMenu)
-window.config(menu = topMenu)
-
-
-"""Local testing"""
-window.iconbitmap("A+.ico")
-"""deliverable"""
-#window.iconbitmap(os.path.join(os.path.dirname(__file__), 'A+.ico'))
-
-WINDOW_HEIGHT = 800
-WINDOW_WIDTH = 600
-
-uNameLbl = Label(window, text="Username")
-uNameLbl.grid(column = 0, row = 0)
-userName = Entry(window, width = 30)
-userName.grid(column = 1, row = 0)
-
-passLbl = Label(window, text = "Password")
-passLbl.grid(column = 0, row = 1)
-password = Entry(window, show = "*", width = 30)
-password.grid(column = 1, row = 1)
 
 
 """
@@ -447,15 +448,15 @@ def createStudentDisplay():
 #Function accesses 'Student Management' page, handles login on intial boot 
 def loginSub():
     errorLbl = Label(window, text = "ERROR: Unable to login")
-    global uName, pWord
-    uName = userName.get()
-    pWord = password.get()
+    #! global uName, pWord
+    #! uName = userName.get()
+    #! pWord = password.get()
     main_driver.set_page_load_timeout(45)
     main_driver.get(loginUrl)
     while("Login" in main_driver.current_url):
         try: 
-            main_driver.find_element(By.ID, "UserName").send_keys(uName)
-            main_driver.find_element(By.ID, "Password").send_keys(pWord)
+            main_driver.find_element(By.ID, "UserName").send_keys(userName.get())
+            main_driver.find_element(By.ID, "Password").send_keys(password.get())
             main_driver.find_element(By.ID, "login").click()
         except TimeoutException:
             print("Timed out attempting to login, trying again...")
@@ -473,14 +474,14 @@ def loginSub():
     else:
         errorLbl.grid(column = 1, row = 2)
 
-#Function overrides [x] in window toolbar, prevents students from closing window without entering the pin
-def customExit():
-    exitConfirm = Toplevel()
-    exitConfirm.title("DO NOT TOUCH")
-    exitConfirm.geometry("300x300")
-    warningLabel = Label(exitConfirm, text = "DO NOT TOUCH THE RED X", font = ('Impact', 50, 'bold'), wraplength = 300, justify = "center")
-    warningLabel.grid()
-    exitConfirm.update()
+#! #Function overrides [x] in window toolbar, prevents students from closing window without entering the pin
+#! def customExit():
+#!     exitConfirm = Toplevel()
+#!     exitConfirm.title("DO NOT TOUCH")
+#!     exitConfirm.geometry("300x300")
+#!     warningLabel = Label(exitConfirm, text = "DO NOT TOUCH THE RED X", font = ('Impact', 50, 'bold'), wraplength = 300, justify = "center")
+#!     warningLabel.grid()
+#!     exitConfirm.update()
 
 submitButton = Button(window, text="Submit", width = 10, height=3, bg="red", fg="black", command = loginSub)
 submitButton.grid(column=0, row=2)
@@ -490,5 +491,4 @@ while True:
     window.update_idletasks()
     window.update()
 main_driver.quit()
-
 
