@@ -3,3 +3,4 @@ dist/
 __pycache__/
 timestamp.pkl
 Students.db
+.DS_Store
