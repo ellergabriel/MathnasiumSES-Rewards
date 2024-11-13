@@ -11,7 +11,6 @@ import pickle
 import glob as glob
 import pandas as pd
 import threading
-import chromedriver_binary
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -33,7 +32,7 @@ DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #Fil
 
 service = Service(executable_path=DRIVER_PATH)
 options = webdriver.ChromeOptions()
-#options.add_argument("--headless=old")
+options.add_argument("--headless=old")
 downloadPath = os.path.dirname(os.path.realpath(sys.argv[0])) #downloads files to local executable
 prefs = {'download.default_directory' : downloadPath}
 options.add_argument("--blink-settings=imageEnabled=false")
@@ -163,8 +162,8 @@ class Subdriver():
         startTime = time.time()
         self.driver.get(loginUrl)
         while("Login" in self.driver.current_url and time.time() - startTime < 60):
-            self.driver.find_element(By.ID, "UserName").send_keys(userName.get())
-            self.driver.find_element(By.ID, "Password").send_keys(password.get())
+            self.driver.find_element(By.ID, "UserName").send_keys(uName)
+            self.driver.find_element(By.ID, "Password").send_keys(pword)
             self.driver.find_element(By.ID, "login").click()
             #self.driver.find_element(By.CSS_SELECTOR, "input[id='UserName']").send_keys(uName)
             #self.driver.find_element(By.CSS_SELECTOR, "input[id='Password']").send_keys(pWord)
@@ -253,7 +252,7 @@ def recordStudent(students):
                 print("STUDENT_HREFS loaded")
                 file.close()
                 print("Mass update not needed, skipping database refresh...")
-                return
+                #return
             if(timeDiff > timeout):
                 print("Over 12 hours since last refresh")
             if(len(students) != studentCount):
@@ -453,10 +452,13 @@ def loginSub():
     #! pWord = password.get()
     main_driver.set_page_load_timeout(45)
     main_driver.get(loginUrl)
+    global uName, pword
+    uName = userName.get()
+    pword = password.get()
     while("Login" in main_driver.current_url):
         try: 
-            main_driver.find_element(By.ID, "UserName").send_keys(userName.get())
-            main_driver.find_element(By.ID, "Password").send_keys(password.get())
+            main_driver.find_element(By.ID, "UserName").send_keys(uName)
+            main_driver.find_element(By.ID, "Password").send_keys(pword)
             main_driver.find_element(By.ID, "login").click()
         except TimeoutException:
             print("Timed out attempting to login, trying again...")
