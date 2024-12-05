@@ -447,22 +447,14 @@ def createStudentDisplay():
 #Function accesses 'Student Management' page, handles login on intial boot 
 def loginSub():
     errorLbl = Label(window, text = "ERROR: Unable to login")
-    #! global uName, pWord
-    #! uName = userName.get()
-    #! pWord = password.get()
     main_driver.set_page_load_timeout(45)
     main_driver.get(loginUrl)
     global uName, pword
     uName = userName.get()
-    pword = password.get()
-    while("Login" in main_driver.current_url):
-        try: 
-            main_driver.find_element(By.ID, "UserName").send_keys(uName)
-            main_driver.find_element(By.ID, "Password").send_keys(pword)
-            main_driver.find_element(By.ID, "login").click()
-        except TimeoutException:
-            print("Timed out attempting to login, trying again...")
-            main_driver.get(loginUrl) #reopens login page for another attempt 
+    pword = password.get() 
+    main_driver.find_element(By.ID, "UserName").send_keys(uName)
+    main_driver.find_element(By.ID, "Password").send_keys(pword)
+    main_driver.find_element(By.ID, "login").click()
     if not("Login" in main_driver.current_url):
         errorLbl.destroy()
         generateStudents()
@@ -475,15 +467,6 @@ def loginSub():
         createStudentDisplay()
     else:
         errorLbl.grid(column = 1, row = 2)
-
-#! #Function overrides [x] in window toolbar, prevents students from closing window without entering the pin
-#! def customExit():
-#!     exitConfirm = Toplevel()
-#!     exitConfirm.title("DO NOT TOUCH")
-#!     exitConfirm.geometry("300x300")
-#!     warningLabel = Label(exitConfirm, text = "DO NOT TOUCH THE RED X", font = ('Impact', 50, 'bold'), wraplength = 300, justify = "center")
-#!     warningLabel.grid()
-#!     exitConfirm.update()
 
 submitButton = Button(window, text="Submit", width = 10, height=3, bg="red", fg="black", command = loginSub)
 submitButton.grid(column=0, row=2)
