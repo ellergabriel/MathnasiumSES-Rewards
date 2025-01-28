@@ -32,11 +32,12 @@ DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #Fil
 
 service = Service(executable_path=DRIVER_PATH)
 options = webdriver.ChromeOptions()
-options.add_argument("--headless=old")
+options.add_argument("--headless")
 downloadPath = os.path.dirname(os.path.realpath(sys.argv[0])) #downloads files to local executable
 prefs = {'download.default_directory' : downloadPath}
 options.add_argument("--blink-settings=imageEnabled=false")
 options.add_experimental_option('prefs', prefs)
+print("Options set up, launching webdriver...")
 main_driver = webdriver.Chrome(service=service, options=options)
 
 #SQLite 
@@ -149,7 +150,7 @@ class Subdriver():
     def __init__(self):
         service = Service(executable_path=DRIVER_PATH)
         options = webdriver.ChromeOptions()
-        options.add_argument("--headless=old")
+        options.add_argument("--headless")
         options.add_argument("--blink-settings=imageEnabled=false")
         self.driver = webdriver.Chrome(service=service, options=options)
 
@@ -169,7 +170,7 @@ class Subdriver():
             #self.driver.find_element(By.CSS_SELECTOR, "input[id='Password']").send_keys(pWord)
             #self.driver.find_element(By.CSS_SELECTOR, "input[id='login']").click()
             if(time.time() - startTime >= 60):
-                print("MMore than a minute to login on multithreading")
+                print("More than a minute to login on multithreading")
                 self.driver.quit()
                 return
         print("beginning recording on this thread")
