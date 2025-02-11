@@ -1,5 +1,5 @@
 from tkinter import Label, Menu, Entry, Toplevel, Message
-
+import os
 def initializeGui(window):
     # Window setup
     window.title("Digital Rewards Tracker")
@@ -25,9 +25,9 @@ def initializeGui(window):
     window.config(menu = topMenu)
 
     """Local testing"""
-    window.iconbitmap("A+.ico")
+    #window.iconbitmap("A+.ico")
     """deliverable"""
-    #window.iconbitmap(os.path.join(os.path.dirname(__file__), 'A+.ico'))
+    window.iconbitmap(os.path.join(os.path.dirname(__file__), 'A+.ico'))
     
     return userName, password, uNameLbl, passLbl
 

@@ -26,9 +26,10 @@ from gui import initializeGui, createRefreshMessage, customExit
 #Selenium 
 loginUrl= "https://radius.mathnasium.com/Student"
 """Local testing"""
-DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #File path for local testing
+#DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #File path for local testing
 """Deliverable"""
-#DRIVER_PATH = os.path.join(os.path.dirname(__file__), 'Drivers\chromedriver.exe') #File path for deliverable
+DRIVER_PATH = os.path.join(os.path.dirname(__file__), 'Drivers\chromedriver.exe') #File path for deliverable
+print(DRIVER_PATH)
 
 service = Service(executable_path=DRIVER_PATH)
 options = webdriver.ChromeOptions()
@@ -68,10 +69,10 @@ userName, password, uNameLbl, passLbl  = initializeGui(window)
 #! window.config(menu = topMenu)
 
 
-#! """Local testing"""
-#! window.iconbitmap("A+.ico")
-#! """deliverable"""
-#! #window.iconbitmap(os.path.join(os.path.dirname(__file__), 'A+.ico'))
+"""Local testing"""
+#window.iconbitmap("A+.ico")
+"""deliverable"""
+#window.iconbitmap(os.path.join(os.path.dirname(__file__), 'A+.ico'))
 
 
 #! uNameLbl = Label(window, text="Username")
