@@ -164,6 +164,7 @@ class Subdriver():
         startTime = time.time()
         self.driver.get(loginUrl)
         while("Login" in self.driver.current_url and time.time() - startTime < 60):
+            WebDriverWait(self.driver, 20).until(EC.presence_of_element_located((By.ID, "UserName")))
             self.driver.find_element(By.ID, "UserName").send_keys(uName)
             self.driver.find_element(By.ID, "Password").send_keys(pword)
             self.driver.find_element(By.ID, "login").click()
@@ -454,6 +455,7 @@ def loginSub():
     global uName, pword
     uName = userName.get()
     pword = password.get() 
+    WebDriverWait(main_driver, 20).until(EC.presence_of_element_located((By.ID, "UserName")))
     main_driver.find_element(By.ID, "UserName").send_keys(uName)
     main_driver.find_element(By.ID, "Password").send_keys(pword)
     main_driver.find_element(By.ID, "login").click()
@@ -472,7 +474,7 @@ def loginSub():
 
 submitButton = Button(window, text="Submit", width = 10, height=3, bg="red", fg="black", command = loginSub)
 submitButton.grid(column=0, row=2)
-#window.protocol("WM_DELETE_WINDOW", customExit)
+window.protocol("WM_DELETE_WINDOW", customExit)
 
 while True:
     window.update_idletasks()

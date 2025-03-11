@@ -292,14 +292,6 @@
    'C:\\Users\\Mathnasium '
    'SES\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\charset_normalizer\\version.py',
    'PYMODULE'),
-  ('chromedriver_binary',
-   'C:\\Users\\Mathnasium '
-   'SES\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\chromedriver_binary\\__init__.py',
-   'PYMODULE'),
-  ('chromedriver_binary.utils',
-   'C:\\Users\\Mathnasium '
-   'SES\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\chromedriver_binary\\utils.py',
-   'PYMODULE'),
   ('cmd',
    'C:\\Users\\Mathnasium '
    'SES\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\cmd.py',
@@ -619,6 +611,9 @@
   ('glob',
    'C:\\Users\\Mathnasium '
    'SES\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\glob.py',
+   'PYMODULE'),
+  ('gui',
+   'C:\\Users\\Mathnasium SES\\Documents\\RadiusScraper\\gui.py',
    'PYMODULE'),
   ('gzip',
    'C:\\Users\\Mathnasium '
