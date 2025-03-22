@@ -163,8 +163,9 @@ class Subdriver():
         stuCur = stuDB.cursor()
         startTime = time.time()
         self.driver.get(loginUrl)
-        try:
-            while("Login" in self.driver.current_url and time.time() - startTime < 60):
+        
+        while("Login" in self.driver.current_url and time.time() - startTime < 60):
+            try:
                 WebDriverWait(self.driver, 20).until(EC.presence_of_element_located((By.ID, "UserName")))
                 self.driver.find_element(By.ID, "UserName").send_keys(uName)
                 self.driver.find_element(By.ID, "Password").send_keys(pword)
@@ -174,8 +175,8 @@ class Subdriver():
                 #self.driver.find_element(By.CSS_SELECTOR, "input[id='login']").click()
                 if(time.time() - startTime >= 60):
                     print("More than a minute to login on multithreading")
-        except:
-            print("Subdriver login failed, trying again...")
+            except:
+                print("Subdriver login failed, trying again...")
         print("beginning recording on this thread")
         for stu in students:
             self.driver.get(stu)
