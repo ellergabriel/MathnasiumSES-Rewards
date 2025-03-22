@@ -18,7 +18,7 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from gui import initializeGui, createRefreshMessage, customExit
 
 
@@ -163,18 +163,19 @@ class Subdriver():
         stuCur = stuDB.cursor()
         startTime = time.time()
         self.driver.get(loginUrl)
-        while("Login" in self.driver.current_url and time.time() - startTime < 60):
-            WebDriverWait(self.driver, 20).until(EC.presence_of_element_located((By.ID, "UserName")))
-            self.driver.find_element(By.ID, "UserName").send_keys(uName)
-            self.driver.find_element(By.ID, "Password").send_keys(pword)
-            self.driver.find_element(By.ID, "login").click()
-            #self.driver.find_element(By.CSS_SELECTOR, "input[id='UserName']").send_keys(uName)
-            #self.driver.find_element(By.CSS_SELECTOR, "input[id='Password']").send_keys(pWord)
-            #self.driver.find_element(By.CSS_SELECTOR, "input[id='login']").click()
-            if(time.time() - startTime >= 60):
-                print("More than a minute to login on multithreading")
-                self.driver.quit()
-                return
+        try:
+            while("Login" in self.driver.current_url and time.time() - startTime < 60):
+                WebDriverWait(self.driver, 20).until(EC.presence_of_element_located((By.ID, "UserName")))
+                self.driver.find_element(By.ID, "UserName").send_keys(uName)
+                self.driver.find_element(By.ID, "Password").send_keys(pword)
+                self.driver.find_element(By.ID, "login").click()
+                #self.driver.find_element(By.CSS_SELECTOR, "input[id='UserName']").send_keys(uName)
+                #self.driver.find_element(By.CSS_SELECTOR, "input[id='Password']").send_keys(pWord)
+                #self.driver.find_element(By.CSS_SELECTOR, "input[id='login']").click()
+                if(time.time() - startTime >= 60):
+                    print("More than a minute to login on multithreading")
+        except:
+            print("Subdriver login failed, trying again...")
         print("beginning recording on this thread")
         for stu in students:
             self.driver.get(stu)
