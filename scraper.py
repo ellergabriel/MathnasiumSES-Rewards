@@ -22,19 +22,36 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from gui import initializeGui, createRefreshMessage, customExit
 
 
+"""
+Chromedriver replacement algo
+ check https://googlechromelabs.github.io/chrome-for-testing/ for newest version
+ if(newVer != currentVer)
+     find download url
+     copy and paste url into selenium
+     delete old chromedriver
+     extract new version
+     update currentVer variable
+     recompile using spec file (how do?)
+        open CMD that runs separate from current application
+        close current scraper
+        run CMD line pylauncher
+        wait for compilation
+        relaunch program
+"""
+
 
 #Selenium 
 loginUrl= "https://radius.mathnasium.com/Student"
 """Local testing"""
-#DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe') #File path for local testing
+#DRIVER_PATH = os.path.join(os.path.dirname(__file__), './chromedriver.exe')
 """Deliverable"""
-DRIVER_PATH = os.path.join(os.path.dirname(__file__), 'Drivers\chromedriver.exe') #File path for deliverable
+DRIVER_PATH = os.path.join(os.path.dirname(__file__), 'Drivers\chromedriver.exe') 
 print(DRIVER_PATH)
 
 service = Service(executable_path=DRIVER_PATH)
 options = webdriver.ChromeOptions()
-options.add_argument("--headless")
-downloadPath = os.path.dirname(os.path.realpath(sys.argv[0])) #downloads files to local executable
+options.add_argument("--headless=new")
+downloadPath = os.path.dirname(os.path.realpath(sys.argv[0])) #downloads files to same path as executable
 prefs = {'download.default_directory' : downloadPath}
 options.add_argument("--blink-settings=imageEnabled=false")
 options.add_experimental_option('prefs', prefs)
@@ -151,7 +168,7 @@ class Subdriver():
     def __init__(self):
         service = Service(executable_path=DRIVER_PATH)
         options = webdriver.ChromeOptions()
-        options.add_argument("--headless")
+        options.add_argument("--headless=new")
         options.add_argument("--blink-settings=imageEnabled=false")
         self.driver = webdriver.Chrome(service=service, options=options)
 
@@ -166,16 +183,19 @@ class Subdriver():
         
         while("Login" in self.driver.current_url and time.time() - startTime < 60):
             try:
-                WebDriverWait(self.driver, 20).until(EC.presence_of_element_located((By.ID, "UserName")))
+                #WebDriverWait(self.driver, 20).until(EC.presence_of_element_located((By.ID, "UserName")))
                 self.driver.find_element(By.ID, "UserName").send_keys(uName)
                 self.driver.find_element(By.ID, "Password").send_keys(pword)
-                self.driver.find_element(By.ID, "login").click()
+                loginBtn = self.driver.find_element(By.ID, "login")
+                self.driver.execute_script("arguments[0].click()", loginBtn)
+                #self.driver.find_element(By.ID, "login").click()
                 #self.driver.find_element(By.CSS_SELECTOR, "input[id='UserName']").send_keys(uName)
                 #self.driver.find_element(By.CSS_SELECTOR, "input[id='Password']").send_keys(pWord)
                 #self.driver.find_element(By.CSS_SELECTOR, "input[id='login']").click()
                 if(time.time() - startTime >= 60):
                     print("More than a minute to login on multithreading")
-            except:
+            except Exception as e:
+                print(e)
                 print("Subdriver login failed, trying again...")
         print("beginning recording on this thread")
         for stu in students:
@@ -323,6 +343,10 @@ def recordStudent(students):
 """
 def parseStudents():
     main_driver.implicitly_wait(10)
+    excelCheck = glob.glob(os.path.join(downloadPath, "*.xlsx"))
+    if (len(excelCheck) > 0): #check for previous excel files
+        for file in excelCheck:
+            os.remove(file)
     global studentList
     studentList = []
     studentExcel = main_driver.find_element(By.ID, "btnExport")
@@ -457,10 +481,12 @@ def loginSub():
     global uName, pword
     uName = userName.get()
     pword = password.get() 
-    WebDriverWait(main_driver, 20).until(EC.presence_of_element_located((By.ID, "UserName")))
+    #WebDriverWait(main_driver, 40).until(EC.presence_of_element_located((By.ID, "UserName")))
     main_driver.find_element(By.ID, "UserName").send_keys(uName)
     main_driver.find_element(By.ID, "Password").send_keys(pword)
-    main_driver.find_element(By.ID, "login").click()
+    #main_driver.implicitly_wait(10)
+    loginBtn = main_driver.find_element(By.ID, "login")
+    main_driver.execute_script("arguments[0].click()", loginBtn)
     if not("Login" in main_driver.current_url):
         errorLbl.destroy()
         generateStudents()
